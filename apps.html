@@ -40,7 +40,7 @@ function bindActions_() {
   });
 
   document.getElementById('editCollaboratorsBtn').addEventListener('click', function () {
-    openAppPage_('editar-colaboradores');
+    openPasswordModal_();
   });
 
   document.getElementById('confirmOperatorsBtn').addEventListener('click', function () {
@@ -49,6 +49,14 @@ function bindActions_() {
 
   document.getElementById('closeOperatorsBtn').addEventListener('click', function () {
     closeOperatorModal_();
+  });
+
+  document.getElementById('confirmPasswordBtn').addEventListener('click', function () {
+    confirmCollaboratorsPassword_();
+  });
+
+  document.getElementById('closePasswordBtn').addEventListener('click', function () {
+    closePasswordModal_();
   });
 }
 
@@ -144,7 +152,37 @@ function closeOperatorModal_() {
 function openAppPage_(page) {
   var url = new URL(window.location.href);
   url.searchParams.set('page', page);
-  window.open(url.toString(), '_blank');
+  window.location.href = url.toString();
+}
+
+function openPasswordModal_() {
+  closeOperatorModal_();
+  document.getElementById('passwordModalError').textContent = '';
+  var passwordInput = document.getElementById('collaboratorsPassword');
+  passwordInput.value = '';
+  document.getElementById('passwordModal').classList.remove('hidden');
+  passwordInput.focus();
+}
+
+function closePasswordModal_() {
+  document.getElementById('passwordModal').classList.add('hidden');
+  document.getElementById('passwordModalError').textContent = '';
+}
+
+function confirmCollaboratorsPassword_() {
+  var password = document.getElementById('collaboratorsPassword').value;
+  var errorBox = document.getElementById('passwordModalError');
+  errorBox.textContent = '';
+
+  google.script.run
+    .withSuccessHandler(function () {
+      closePasswordModal_();
+      openAppPage_('editar-colaboradores');
+    })
+    .withFailureHandler(function (error) {
+      errorBox.textContent = error.message || String(error);
+    })
+    .validateCollaboratorsPassword(password);
 }
 
 function fillOperatorSelectors_(operators) {
