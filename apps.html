@@ -18,6 +18,10 @@ document.addEventListener('DOMContentLoaded', function () {
 });
 
 function bindActions_() {
+    document.getElementById('listRncsBtn').addEventListener('click', function () {
+    openAppPage_('listar-rncs');
+  });
+
   document.getElementById('addDefectBtn').addEventListener('click', function () {
     addDefectRow_();
   });
@@ -35,11 +39,15 @@ function bindActions_() {
     openOperatorModal_(false);
   });
 
+  document.getElementById('editCollaboratorsBtn').addEventListener('click', function () {
+    openAppPage_('editar-colaboradores');
+  });
+
   document.getElementById('confirmOperatorsBtn').addEventListener('click', function () {
     confirmOperatorSelection_();
   });
 
-  document.getElementById('cancelOperatorsBtn').addEventListener('click', function () {
+  document.getElementById('closeOperatorsBtn').addEventListener('click', function () {
     closeOperatorModal_();
   });
 }
@@ -125,12 +133,18 @@ function openOperatorModal_(required) {
   fillOperatorSelectors_(state.selectedOperators);
   document.getElementById('operatorModalError').textContent = '';
   document.getElementById('operatorModal').classList.remove('hidden');
-  document.getElementById('cancelOperatorsBtn').style.display = required ? 'none' : '';
+  document.getElementById('closeOperatorsBtn').style.display = required ? 'none' : '';
 }
 
 function closeOperatorModal_() {
   document.getElementById('operatorModal').classList.add('hidden');
   document.getElementById('operatorModalError').textContent = '';
+}
+
+function openAppPage_(page) {
+  var url = new URL(window.location.href);
+  url.searchParams.set('page', page);
+  window.open(url.toString(), '_blank');
 }
 
 function fillOperatorSelectors_(operators) {
