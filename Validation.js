@@ -38,6 +38,9 @@ function validateInspectionPayload_(payload) {
     throw new Error('Inclua ao menos 1 lançamento de defeito.');
   }
 
+  var defectCatalog = getDefectsByPositionCatalog_();
+  var activePairs = defectCatalog.paresAtivos || {};
+
   payload.defeitos.forEach(function (item, idx) {
     if (!item.posicao || !String(item.posicao).trim()) {
       throw new Error('Linha ' + (idx + 1) + ': posição é obrigatória.');
@@ -49,6 +52,15 @@ function validateInspectionPayload_(payload) {
     var quantidade = Number(item.quantidade);
     if (!quantidade || quantidade <= 0) {
       throw new Error('Linha ' + (idx + 1) + ': quantidade deve ser maior que zero.');
+    }
+
+    if (quantidade > qtd) {
+      throw new Error('Linha ' + (idx + 1) + ': quantidade não pode ser maior que Qtdd Revisada (' + qtd + ').');
+    }
+
+    var relationKey = getPositionDefectKey_(item.posicao, item.defeito);
+    if (!activePairs[relationKey]) {
+      throw new Error('Linha ' + (idx + 1) + ': defeito "' + item.defeito + '" não está ativo para posição "' + item.posicao + '".');
     }
   });
 }
