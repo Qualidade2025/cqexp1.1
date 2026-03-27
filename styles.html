@@ -19,13 +19,6 @@
     margin: 24px auto;
     padding: 0 16px 24px;
   }
-  h1 {
-    margin-bottom: 4px;
-  }
-  .subtitle {
-    margin-top: 0;
-    color: #475467;
-  }
   .card {
     background: var(--white);
     border: 1px solid var(--border);
@@ -68,9 +61,14 @@
     gap: 8px;
     margin-bottom: 12px;
   }
+  .top-actions {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 14px;
+  }
   .operator-selectors {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+    grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 10px;
     margin-top: 10px;
   }
@@ -160,5 +158,29 @@
     display: flex;
     justify-content: flex-end;
     gap: 8px;
+  }
+  .modal-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    margin-bottom: 6px;
+  }
+  .modal-header h3 {
+    margin: 0;
+  }
+  .icon-btn {
+    width: 34px;
+    height: 34px;
+    min-width: 34px;
+    padding: 0;
+    font-size: 22px;
+    line-height: 1;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: transparent;
+    color: var(--text);
+    border-color: var(--border);
   }
 </style>
