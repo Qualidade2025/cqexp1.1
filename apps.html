@@ -439,10 +439,3 @@ function appendPlaceholderOption_(select, text) {
   option.textContent = text || 'Selecione...';
   select.appendChild(option);
 }
-
-function appendPlaceholderOption_(select) {
-  var option = document.createElement('option');
-  option.value = '';
-  option.textContent = 'Selecione...';
-  select.appendChild(option);
-}
