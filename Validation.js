@@ -19,8 +19,8 @@ function validateInspectionPayload_(payload) {
     throw new Error('Origem é obrigatória.');
   }
 
-  if (!Array.isArray(payload.operadores) || payload.operadores.length < 1 || payload.operadores.length > 3) {
-    throw new Error('Selecione de 1 a 3 colaboradores na equipe.');
+  if (!Array.isArray(payload.operadores) || payload.operadores.length < 1) {
+    throw new Error('Selecione ao menos 1 operador para a inspeção.');
   }
 
   var duplicateCheck = {};
