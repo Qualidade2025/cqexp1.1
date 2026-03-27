@@ -127,3 +127,23 @@ function healthcheck() {
     spreadsheetId: SpreadsheetApp.getActiveSpreadsheet().getId()
   };
 }
+
+function validateCollaboratorsPassword(password) {
+  var enteredPassword = String(password || '').trim();
+  if (!enteredPassword) {
+    throw new Error('Informe a senha.');
+  }
+
+  var expectedPassword = getCollaboratorsEditPassword_();
+  if (!expectedPassword) {
+    throw new Error('Senha de edição não configurada em colaboradores!E2.');
+  }
+
+  if (enteredPassword !== expectedPassword) {
+    throw new Error('Senha inválida.');
+  }
+
+  return {
+    ok: true
+  };
+}
