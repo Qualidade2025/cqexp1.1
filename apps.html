@@ -51,6 +51,7 @@ function loadCatalogs_() {
       state.catalogs.colaboradores = state.catalogs.colaboradores || [];
       state.catalogs.posicoes = state.catalogs.posicoes || [];
       state.catalogs.defeitos = state.catalogs.defeitos || [];
+      state.catalogs.defeitosPorPosicao = state.catalogs.defeitosPorPosicao || {};
       state.catalogs.origens = state.catalogs.origens || [];
 
       renderOperatorSelectors_();
@@ -245,12 +246,9 @@ function addDefectRow_() {
   var tdDef = document.createElement('td');
   var selectDef = document.createElement('select');
   selectDef.className = 'defeito';
-  appendPlaceholderOption_(selectDef);
-  state.catalogs.defeitos.forEach(function (def) {
-    var opt2 = document.createElement('option');
-    opt2.value = def;
-    opt2.textContent = def;
-    selectDef.appendChild(opt2);
+  renderDefectsForPosition_(selectDef, '');
+  selectPos.addEventListener('change', function () {
+    renderDefectsForPosition_(selectDef, selectPos.value);
   });
   tdDef.appendChild(selectDef);
 
@@ -287,6 +285,30 @@ function addDefectRow_() {
   tr.appendChild(tdQtd);
   tr.appendChild(tdAction);
   tbody.appendChild(tr);
+}
+
+function renderDefectsForPosition_(selectDef, posicao) {
+  var previousDefect = selectDef.value;
+  var defectMap = state.catalogs.defeitosPorPosicao || {};
+  var filteredDefects = defectMap[posicao] || [];
+
+  selectDef.innerHTML = '';
+  appendPlaceholderOption_(selectDef);
+
+  filteredDefects.forEach(function (def) {
+    var option = document.createElement('option');
+    option.value = def;
+    option.textContent = def;
+    selectDef.appendChild(option);
+  });
+
+  selectDef.disabled = !posicao;
+
+  if (previousDefect && filteredDefects.indexOf(previousDefect) !== -1) {
+    selectDef.value = previousDefect;
+  } else {
+    selectDef.value = '';
+  }
 }
 
 function focusLastQuantidade_() {
