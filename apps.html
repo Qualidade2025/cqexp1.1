@@ -1,0 +1,273 @@
+var state = {
+  catalogs: {
+    colaboradores: [],
+    posicoes: [],
+    defeitos: [],
+    origens: []
+  }
+};
+
+document.addEventListener('DOMContentLoaded', function () {
+  bindActions_();
+  loadCatalogs_();
+  refreshServerTime_();
+});
+
+function bindActions_() {
+  document.getElementById('addDefectBtn').addEventListener('click', function () {
+    addDefectRow_();
+  });
+
+  document.getElementById('saveBtn').addEventListener('click', function () {
+    saveInspection_();
+  });
+
+  document.getElementById('clearBtn').addEventListener('click', function () {
+    resetForm_();
+    setMessage_('Formulário limpo.', 'success');
+  });
+}
+
+function loadCatalogs_() {
+  google.script.run
+    .withSuccessHandler(function (catalogs) {
+      state.catalogs = catalogs;
+      renderTeamOptions_();
+      renderOrigens_();
+      clearDefectRows_();
+      addDefectRow_();
+    })
+    .withFailureHandler(function (error) {
+      setMessage_('Falha ao carregar catálogos: ' + (error.message || error), 'error');
+    })
+    .getCatalogs();
+}
+
+function refreshServerTime_() {
+  google.script.run
+    .withSuccessHandler(function (now) {
+      document.getElementById('serverNow').value = new Date(now).toLocaleString('pt-BR');
+    })
+    .withFailureHandler(function () {
+      document.getElementById('serverNow').value = 'Indisponível';
+    })
+    .getServerNow();
+}
+
+function renderTeamOptions_() {
+  var container = document.getElementById('teamOptions');
+  container.innerHTML = '';
+
+  state.catalogs.colaboradores.forEach(function (colab) {
+    var wrapper = document.createElement('label');
+    wrapper.className = 'team-chip';
+
+    var input = document.createElement('input');
+    input.type = 'checkbox';
+    input.name = 'colaborador';
+    input.value = colab.id;
+    input.dataset.name = colab.name;
+    input.addEventListener('change', onTeamSelectionChange_);
+
+    var span = document.createElement('span');
+    span.textContent = colab.name + ' (' + colab.id + ')';
+
+    wrapper.appendChild(input);
+    wrapper.appendChild(span);
+    container.appendChild(wrapper);
+  });
+
+  updateTeamSummary_();
+}
+
+function onTeamSelectionChange_(event) {
+  var selected = getSelectedTeam_();
+  if (selected.length > 3) {
+    event.target.checked = false;
+    setMessage_('A equipe permite no máximo 3 colaboradores.', 'error');
+    return;
+  }
+  updateTeamSummary_();
+  setMessage_('');
+}
+
+function updateTeamSummary_() {
+  var selected = getSelectedTeam_();
+  var summary = document.getElementById('teamSummary');
+
+  if (!selected.length) {
+    summary.textContent = 'Nenhum colaborador selecionado';
+    return;
+  }
+
+  summary.textContent = selected.map(function (item) {
+    return item.name;
+  }).join(', ');
+}
+
+function getSelectedTeam_() {
+  return Array.prototype.slice
+    .call(document.querySelectorAll('input[name="colaborador"]:checked'))
+    .map(function (node) {
+      return {
+        id: node.value,
+        name: node.dataset.name
+      };
+    });
+}
+
+function renderOrigens_() {
+  var select = document.getElementById('origem');
+  select.innerHTML = '<option value="">Selecione...</option>';
+
+  state.catalogs.origens.forEach(function (origem) {
+    var option = document.createElement('option');
+    option.value = origem;
+    option.textContent = origem;
+    select.appendChild(option);
+  });
+}
+
+function clearDefectRows_() {
+  document.getElementById('defectRows').innerHTML = '';
+}
+
+function addDefectRow_() {
+  var tbody = document.getElementById('defectRows');
+  var tr = document.createElement('tr');
+
+  var tdPos = document.createElement('td');
+  var selectPos = document.createElement('select');
+  selectPos.className = 'posicao';
+  selectPos.innerHTML = '<option value="">Selecione...</option>';
+  state.catalogs.posicoes.forEach(function (pos) {
+    var opt = document.createElement('option');
+    opt.value = pos;
+    opt.textContent = pos;
+    selectPos.appendChild(opt);
+  });
+  tdPos.appendChild(selectPos);
+
+  var tdDef = document.createElement('td');
+  var selectDef = document.createElement('select');
+  selectDef.className = 'defeito';
+  selectDef.innerHTML = '<option value="">Selecione...</option>';
+  state.catalogs.defeitos.forEach(function (def) {
+    var opt2 = document.createElement('option');
+    opt2.value = def;
+    opt2.textContent = def;
+    selectDef.appendChild(opt2);
+  });
+  tdDef.appendChild(selectDef);
+
+  var tdQtd = document.createElement('td');
+  var inputQtd = document.createElement('input');
+  inputQtd.type = 'number';
+  inputQtd.className = 'quantidade';
+  inputQtd.min = '1';
+  inputQtd.step = '1';
+  inputQtd.addEventListener('keydown', function (event) {
+    if (event.key === 'Enter') {
+      event.preventDefault();
+      addDefectRow_();
+      focusLastQuantidade_();
+    }
+  });
+  tdQtd.appendChild(inputQtd);
+
+  var tdAction = document.createElement('td');
+  var removeBtn = document.createElement('button');
+  removeBtn.type = 'button';
+  removeBtn.className = 'row-remove';
+  removeBtn.textContent = 'Remover';
+  removeBtn.addEventListener('click', function () {
+    tr.remove();
+    if (!document.querySelectorAll('#defectRows tr').length) {
+      addDefectRow_();
+    }
+  });
+  tdAction.appendChild(removeBtn);
+
+  tr.appendChild(tdPos);
+  tr.appendChild(tdDef);
+  tr.appendChild(tdQtd);
+  tr.appendChild(tdAction);
+  tbody.appendChild(tr);
+}
+
+function focusLastQuantidade_() {
+  var fields = document.querySelectorAll('#defectRows .quantidade');
+  if (!fields.length) {
+    return;
+  }
+  fields[fields.length - 1].focus();
+}
+
+function buildPayload_() {
+  var defects = Array.prototype.slice.call(document.querySelectorAll('#defectRows tr')).map(function (tr) {
+    return {
+      posicao: tr.querySelector('.posicao').value,
+      defeito: tr.querySelector('.defeito').value,
+      quantidade: Number(tr.querySelector('.quantidade').value)
+    };
+  });
+
+  return {
+    op: document.getElementById('op').value.trim(),
+    qtddRevisada: Number(document.getElementById('qtddRevisada').value),
+    origem: document.getElementById('origem').value,
+    clienteManual: document.getElementById('clienteManual').value.trim(),
+    operadores: getSelectedTeam_(),
+    defeitos: defects
+  };
+}
+
+function saveInspection_() {
+  var payload = buildPayload_();
+
+  setLoading_(true);
+  setMessage_('Salvando...');
+
+  google.script.run
+    .withSuccessHandler(function (response) {
+      setLoading_(false);
+      resetForm_();
+      setMessage_('Inspeção salva com sucesso! ID: ' + response.idInspecao, 'success');
+      refreshServerTime_();
+    })
+    .withFailureHandler(function (error) {
+      setLoading_(false);
+      setMessage_(error.message || String(error), 'error');
+    })
+    .saveInspection(payload);
+}
+
+function resetForm_() {
+  document.getElementById('op').value = '';
+  document.getElementById('qtddRevisada').value = '';
+  document.getElementById('origem').value = '';
+  document.getElementById('clienteManual').value = '';
+
+  Array.prototype.slice.call(document.querySelectorAll('input[name="colaborador"]')).forEach(function (input) {
+    input.checked = false;
+  });
+  updateTeamSummary_();
+
+  clearDefectRows_();
+  addDefectRow_();
+}
+
+function setLoading_(loading) {
+  document.getElementById('saveBtn').disabled = loading;
+  document.getElementById('clearBtn').disabled = loading;
+  document.getElementById('addDefectBtn').disabled = loading;
+}
+
+function setMessage_(text, type) {
+  var box = document.getElementById('messageBox');
+  box.textContent = text || '';
+  box.className = 'message';
+  if (type) {
+    box.classList.add(type);
+  }
+}

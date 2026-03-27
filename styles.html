@@ -1,0 +1,119 @@
+<style>
+  :root {
+    --bg: #f4f6fb;
+    --text: #1f2a37;
+    --primary: #0b57d0;
+    --danger: #b42318;
+    --ok: #067647;
+    --border: #d0d5dd;
+    --white: #fff;
+  }
+  body {
+    font-family: Arial, sans-serif;
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+  }
+  .container {
+    max-width: 1024px;
+    margin: 24px auto;
+    padding: 0 16px 24px;
+  }
+  h1 {
+    margin-bottom: 4px;
+  }
+  .subtitle {
+    margin-top: 0;
+    color: #475467;
+  }
+  .card {
+    background: var(--white);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 14px;
+    margin-bottom: 14px;
+  }
+  .form-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+    gap: 12px;
+  }
+  label {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    font-size: 14px;
+  }
+  input,
+  select,
+  button {
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    font-size: 14px;
+    padding: 10px;
+  }
+  button {
+    cursor: pointer;
+    background: var(--primary);
+    color: var(--white);
+    border-color: var(--primary);
+  }
+  button.secondary {
+    background: transparent;
+    color: var(--text);
+    border-color: var(--border);
+  }
+  .actions {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 12px;
+  }
+  .team-options {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+    gap: 6px;
+    margin-bottom: 10px;
+  }
+  .team-chip {
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 8px;
+    background: #f9fafb;
+  }
+  .defect-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 8px;
+  }
+  .table-wrap {
+    overflow-x: auto;
+  }
+  table {
+    width: 100%;
+    border-collapse: collapse;
+  }
+  th,
+  td {
+    border-bottom: 1px solid #eaecf0;
+    padding: 8px;
+    text-align: left;
+  }
+  .row-remove {
+    background: transparent;
+    color: var(--danger);
+    border-color: #fecdca;
+    padding: 6px 8px;
+  }
+  .message {
+    min-height: 24px;
+    font-weight: 600;
+  }
+  .message.error {
+    color: var(--danger);
+  }
+  .message.success {
+    color: var(--ok);
+  }
+</style>

@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <base target="_top" />
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>CQ Expedição - MVP</title>
+    <?!= include('styles'); ?>
+  </head>
+  <body>
+    <main class="container">
+      <h1>Controle de Qualidade / Expedição</h1>
+      <p class="subtitle">Registro de inspeções por OP</p>
+
+      <section class="card">
+        <h2>Equipe (1 a 3 colaboradores)</h2>
+        <div id="teamOptions" class="team-options"></div>
+        <div class="team-selected">
+          <strong>Equipe selecionada:</strong>
+          <span id="teamSummary">Nenhum colaborador selecionado</span>
+        </div>
+      </section>
+
+      <section class="card form-grid">
+        <label>
+          OP *
+          <input id="op" type="text" maxlength="50" placeholder="Ex.: OP12345" />
+        </label>
+
+        <label>
+          Qtdd Revisada *
+          <input id="qtddRevisada" type="number" min="1" step="1" />
+        </label>
+
+        <label>
+          Origem *
+          <select id="origem"></select>
+        </label>
+
+        <label>
+          Cliente (manual por enquanto)
+          <input id="clienteManual" type="text" maxlength="120" placeholder="Ex.: Cliente XYZ" />
+        </label>
+
+        <label>
+          Data/Hora Servidor
+          <input id="serverNow" type="text" disabled />
+        </label>
+      </section>
+
+      <section class="card">
+        <div class="defect-header">
+          <h2>Lançamentos de Defeitos</h2>
+          <button id="addDefectBtn" class="secondary" type="button">+ Adicionar lançamento</button>
+        </div>
+
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Posição *</th>
+                <th>Defeito *</th>
+                <th>Quantidade *</th>
+                <th>Ações</th>
+              </tr>
+            </thead>
+            <tbody id="defectRows"></tbody>
+          </table>
+        </div>
+      </section>
+
+      <section class="actions">
+        <button id="saveBtn" type="button">Salvar</button>
+        <button id="clearBtn" class="secondary" type="button">Limpar</button>
+      </section>
+
+      <section id="messageBox" class="message" aria-live="polite"></section>
+    </main>
+
+    <script><?!= include('apps'); ?></script>
+  </body>
+</html>
