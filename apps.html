@@ -18,10 +18,6 @@ document.addEventListener('DOMContentLoaded', function () {
 });
 
 function bindActions_() {
-  document.getElementById('qtddRevisada').addEventListener('input', function () {
-    syncQuantidadeLimits_();
-  });
-
   document.getElementById('addDefectBtn').addEventListener('click', function () {
     addDefectRow_();
   });
@@ -51,12 +47,14 @@ function bindActions_() {
 function loadCatalogs_() {
   google.script.run
     .withSuccessHandler(function (catalogs) {
-      state.catalogs = catalogs;
+      state.catalogs = catalogs || {};
+      state.catalogs.colaboradores = state.catalogs.colaboradores || [];
+      state.catalogs.posicoes = state.catalogs.posicoes || [];
+      state.catalogs.defeitos = state.catalogs.defeitos || [];
+      state.catalogs.origens = state.catalogs.origens || [];
+
       renderOperatorSelectors_();
       renderOrigens_();
-      if (!state.catalogs.posicoes.length) {
-        setMessage_('Nenhuma posição encontrada na matriz da aba cad_defeitos.', 'error');
-      }
       clearDefectRows_();
       addDefectRow_();
       loadStoredOperators_();
@@ -146,6 +144,7 @@ function fillOperatorSelectors_(operators) {
     if (index > 3) {
       return;
     }
+
     var select = document.getElementById('operador' + (index + 1));
     if (select) {
       select.value = op.id;
@@ -246,11 +245,13 @@ function addDefectRow_() {
   var tdDef = document.createElement('td');
   var selectDef = document.createElement('select');
   selectDef.className = 'defeito';
-  appendPlaceholderOption_(selectDef, 'Selecione a posição...');
-  selectPos.addEventListener('change', function () {
-    renderDefectOptionsForPosition_(selectDef, selectPos.value);
+  appendPlaceholderOption_(selectDef);
+  state.catalogs.defeitos.forEach(function (def) {
+    var opt2 = document.createElement('option');
+    opt2.value = def;
+    opt2.textContent = def;
+    selectDef.appendChild(opt2);
   });
-  renderDefectOptionsForPosition_(selectDef, selectPos.value);
   tdDef.appendChild(selectDef);
 
   var tdQtd = document.createElement('td');
@@ -259,7 +260,6 @@ function addDefectRow_() {
   inputQtd.className = 'quantidade';
   inputQtd.min = '1';
   inputQtd.step = '1';
-  inputQtd.max = String(getQtddRevisada_());
   inputQtd.addEventListener('keydown', function (event) {
     if (event.key === 'Enter') {
       event.preventDefault();
@@ -287,23 +287,6 @@ function addDefectRow_() {
   tr.appendChild(tdQtd);
   tr.appendChild(tdAction);
   tbody.appendChild(tr);
-}
-
-function getQtddRevisada_() {
-  var qtdd = Number(document.getElementById('qtddRevisada').value);
-  return qtdd > 0 ? qtdd : 1;
-}
-
-function syncQuantidadeLimits_() {
-  var qtdd = getQtddRevisada_();
-  var inputs = document.querySelectorAll('#defectRows .quantidade');
-
-  inputs.forEach(function (input) {
-    input.max = String(qtdd);
-    if (Number(input.value) > qtdd) {
-      input.value = qtdd;
-    }
-  });
 }
 
 function focusLastQuantidade_() {
@@ -335,11 +318,6 @@ function buildPayload_() {
 
 function saveInspection_() {
   var payload = buildPayload_();
-  var quantityValidationError = validateQuantidadesAgainstQtdd_(payload);
-  if (quantityValidationError) {
-    setMessage_(quantityValidationError, 'error');
-    return;
-  }
 
   setLoading_(true);
   setMessage_('Salvando...', 'info');
@@ -357,41 +335,6 @@ function saveInspection_() {
     .saveInspection(payload);
 }
 
-function validateQuantidadesAgainstQtdd_(payload) {
-  var qtddRevisada = Number(payload.qtddRevisada);
-  if (!qtddRevisada || qtddRevisada <= 0) {
-    return null;
-  }
-
-  for (var idx = 0; idx < payload.defeitos.length; idx += 1) {
-    var quantidade = Number(payload.defeitos[idx].quantidade);
-    if (quantidade > qtddRevisada) {
-      return 'Linha ' + (idx + 1) + ': quantidade não pode ser maior que Qtdd Revisada (' + qtddRevisada + ').';
-    }
-  }
-
-  return null;
-}
-
-function renderDefectOptionsForPosition_(defectSelect, position) {
-  defectSelect.innerHTML = '';
-
-  var allowedDefects = (state.catalogs.defeitosPorPosicao && state.catalogs.defeitosPorPosicao[position]) || [];
-  if (!position) {
-    appendPlaceholderOption_(defectSelect, 'Selecione a posição...');
-    return;
-  }
-
-  appendPlaceholderOption_(defectSelect, allowedDefects.length ? 'Selecione...' : 'Sem defeitos ativos');
-
-  allowedDefects.forEach(function (defect) {
-    var option = document.createElement('option');
-    option.value = defect;
-    option.textContent = defect;
-    defectSelect.appendChild(option);
-  });
-}
-
 function resetForm_() {
   document.getElementById('op').value = '';
   document.getElementById('qtddRevisada').value = '';
@@ -400,7 +343,6 @@ function resetForm_() {
 
   clearDefectRows_();
   addDefectRow_();
-  syncQuantidadeLimits_();
 }
 
 function setLoading_(loading) {
@@ -433,9 +375,9 @@ function setMessage_(text, type, autoClear) {
   }
 }
 
-function appendPlaceholderOption_(select, text) {
+function appendPlaceholderOption_(select) {
   var option = document.createElement('option');
   option.value = '';
-  option.textContent = text || 'Selecione...';
+  option.textContent = 'Selecione...';
   select.appendChild(option);
 }
