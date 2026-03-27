@@ -9,15 +9,14 @@
   </head>
   <body>
     <main class="container">
-      <h1>Controle de Qualidade / Expedição</h1>
-      <p class="subtitle">Registro de inspeções por OP</p>
+      <section class="top-actions">
+        <button id="listRncsBtn" class="secondary" type="button">Listar RNCs</button>
+        <button id="editOperatorsBtn" class="secondary" type="button">Colaboradores</button>
+      </section>
 
       <section class="card">
-        <div class="operator-header">
-          <h2>Operadores</h2>
-          <button id="editOperatorsBtn" class="secondary" type="button">Operadores</button>
-        </div>
-        <p class="hint">A equipe selecionada fica fixa até você alterar no botão "Operadores".</p>
+        <h2>Colaboradores selecionados</h2>
+        <p class="hint">A equipe selecionada fica fixa até você alterar no botão "Colaboradores".</p>
         <div id="selectedOperators" class="selected-operators">Nenhum operador selecionado.</div>
       </section>
 
@@ -75,12 +74,15 @@
 
     <div id="operatorModal" class="modal-backdrop hidden" role="dialog" aria-modal="true" aria-labelledby="operatorModalTitle">
       <section class="modal-card">
-        <h3 id="operatorModalTitle">Selecionar operadores</h3>
+        <div class="modal-header">
+          <h3 id="operatorModalTitle">Selecionar operadores</h3>
+          <button id="closeOperatorsBtn" class="icon-btn" type="button" aria-label="Fechar modal">×</button>
+        </div>
         <p class="hint">Escolha até 4 operadores. É obrigatório selecionar pelo menos 1.</p>
         <div id="operatorSelectors" class="operator-selectors"></div>
         <p id="operatorModalError" class="message error"></p>
         <div class="modal-actions">
-          <button id="cancelOperatorsBtn" class="secondary" type="button">Cancelar</button>
+          <button id="editCollaboratorsBtn" class="secondary" type="button">Editar</button>
           <button id="confirmOperatorsBtn" type="button">OK</button>
         </div>
       </section>
