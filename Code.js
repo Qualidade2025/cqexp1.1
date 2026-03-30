@@ -27,6 +27,10 @@ function getAppBaseUrl_() {
 }
 
 function getTemplateNameByPage_(page) {
+  if (page === 'index' || page === 'home' || page === 'inicio') {
+    return 'Index';
+  }
+
   if (page === 'listar-rncs' || page === 'listarcontroles' || page === 'listar-controles') {
     return 'ListarControles';
   }
@@ -37,6 +41,7 @@ function getTemplateNameByPage_(page) {
 
   return 'Index';
 }
+
 
 function include(filename) {
   return HtmlService.createHtmlOutputFromFile(filename).getContent();
