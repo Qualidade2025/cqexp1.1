@@ -14,13 +14,9 @@
         <button id="editOperatorsBtn" class="secondary" type="button">Colaboradores</button>
       </section>
 
-      <section class="card">
-        <h2>Colaboradores selecionados</h2>
-        <p class="hint">A equipe selecionada fica fixa até você alterar no botão "Colaboradores".</p>
-        <div id="selectedOperators" class="selected-operators">Nenhum operador selecionado.</div>
-      </section>
+      <div id="selectedOperators" class="selected-operators">Nenhum operador selecionado.</div>
 
-      <section class="card form-grid">
+      <section class="form-grid">
         <label>
           OP *
           <input id="op" type="text" maxlength="50" placeholder="Ex.: OP12345" />
@@ -39,6 +35,11 @@
         <label>
           Cliente (manual por enquanto)
           <input id="clienteManual" type="text" maxlength="120" placeholder="Ex.: Cliente XYZ" />
+        </label>
+
+        <label class="checkbox-row">
+          <input id="retrabalho" type="checkbox" />
+          Retrabalho
         </label>
 
       </section>
