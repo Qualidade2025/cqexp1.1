@@ -7,11 +7,25 @@
     <title>Listar controles</title>
     <?!= include('styles') ?>
     <style>
+      .page-title {
+        margin: 0 0 10px;
+        font-size: 18px;
+        font-weight: 600;
+      }
+
+      .filters-card {
+        border: none;
+      }
+
       .filters-grid {
         display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+        grid-template-columns: repeat(7, minmax(0, 1fr));
         gap: 10px;
         margin-bottom: 10px;
+      }
+
+      .filters-grid > label {
+        margin: 0;
       }
 
       .filter-compact {
@@ -46,7 +60,7 @@
         font-weight: 700;
       }
 
-      .pill {
+     .pill {
         display: inline-flex;
         align-items: center;
         border-radius: 999px;
@@ -69,6 +83,12 @@
         grid-template-columns: 1fr 1fr 2fr 1fr 1fr;
         gap: 8px;
         margin: 10px 0;
+      }
+
+      @media (max-width: 1180px) {
+        .filters-grid {
+          grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+        }
       }
 
       @media (max-width: 960px) {
@@ -106,11 +126,9 @@
         <button class="secondary theme-toggle" type="button" data-theme-toggle aria-label="Alternar tema">🌙</button>
       </section>
 
-      <section class="card">
-        <div class="defect-header">
-          <h2>Listar controles</h2>
-        </div>
+      <h2 class="page-title">Listar controles</h2>
 
+      <section class="card filters-card">
         <div class="filters-grid">
           <label>
             Data inicial
@@ -122,7 +140,11 @@
           </label>
           <label>
             OP
-            <input id="filterOp" type="text" maxlength="50" placeholder="Ex.: OP12345" />
+            <input id="filterOp" class="filter-compact" type="text" maxlength="50" placeholder="Ex.: OP12345" />
+          </label>
+          <label>
+            Cliente
+            <input id="filterCliente" class="filter-compact" type="text" maxlength="120" placeholder="Nome do cliente" />
           </label>
           <label>
             Origem
@@ -131,20 +153,16 @@
             </select>
           </label>
           <label>
-            Cliente
-            <input id="filterCliente" type="text" maxlength="120" placeholder="Nome do cliente" />
-          </label>
-          <label>
-            Operador
-            <input id="filterOperador" type="text" maxlength="120" placeholder="Nome ou ID" />
-          </label>
-          <label>
             Retrabalho
-            <select id="filterRetrabalho">
+            <select id="filterRetrabalho" class="filter-compact">
               <option value="todos">Todos</option>
               <option value="sim">Somente retrabalho</option>
               <option value="nao">Sem retrabalho</option>
             </select>
+          </label>
+          <label>
+            Operador
+            <input id="filterOperador" class="filter-compact" type="text" maxlength="120" placeholder="Nome ou ID" />
           </label>
         </div>
 
