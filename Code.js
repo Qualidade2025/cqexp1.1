@@ -10,11 +10,20 @@ function doGet(e) {
   }
 
   var templateName = getTemplateNameByPage_(page);
+  var template = HtmlService.createTemplateFromFile(templateName);
+  template.appBaseUrl = getAppBaseUrl_();
 
-  return HtmlService.createTemplateFromFile(templateName)
-    .evaluate()
+  return template.evaluate()
     .setTitle('CQ Expedição - MVP')
     .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL);
+}
+
+function getAppBaseUrl_() {
+  try {
+    return ScriptApp.getService().getUrl() || '';
+  } catch (error) {
+    return '';
+  }
 }
 
 function getTemplateNameByPage_(page) {
