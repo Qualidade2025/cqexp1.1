@@ -396,6 +396,7 @@ function buildPayload_() {
     qtddRevisada: Number(document.getElementById('qtddRevisada').value),
     origem: document.getElementById('origem').value,
     clienteManual: document.getElementById('clienteManual').value.trim(),
+    retrabalho: document.getElementById('retrabalho').checked,
     operadores: state.selectedOperators,
     defeitos: defects
   };
@@ -425,6 +426,7 @@ function resetForm_() {
   document.getElementById('qtddRevisada').value = '';
   document.getElementById('origem').value = '';
   document.getElementById('clienteManual').value = '';
+  document.getElementById('retrabalho').checked = false;
 
   clearDefectRows_();
   addDefectRow_();
