@@ -363,6 +363,43 @@ function listInspectionsControls_(params) {
   };
 }
 
+function updateInspectionControl_(payload) {
+  var data = payload && typeof payload === 'object' ? payload : {};
+  var idInspecao = Number(data.idInspecao);
+  var sheetRowNumber = Number(data.sheetRowNumber);
+
+  if (!isFinite(idInspecao) || idInspecao < 1) {
+    throw new Error('ID da inspeção inválido para edição.');
+  }
+
+  if (!isFinite(sheetRowNumber) || sheetRowNumber < 2) {
+    throw new Error('Linha da inspeção inválida para edição.');
+  }
+
+  var sheet = getRequiredSheet_(SHEETS.INSPECOES);
+  var values = sheet.getRange(sheetRowNumber, 1, 1, 15).getValues();
+  if (!values.length) {
+    throw new Error('Inspeção não encontrada para edição.');
+  }
+
+  var row = values[0];
+  var currentId = Number(row[0]);
+  if (!isFinite(currentId) || Math.floor(currentId) !== Math.floor(idInspecao)) {
+    throw new Error('A inspeção foi alterada. Recarregue a listagem e tente novamente.');
+  }
+
+  row[2] = String(data.op || '').trim();
+  row[4] = String(data.origem || '').trim();
+  row[5] = String(data.cliente || '').trim();
+  row[14] = data.retrabalho ? 'X' : '';
+
+  sheet.getRange(sheetRowNumber, 1, 1, 15).setValues([row]);
+
+  return {
+    ok: true
+  };
+}
+
 function mapInspectionRow_(row, sheetRowNumber) {
   var id = Number(row[0]);
   var hasId = isFinite(id) && id > 0;
