@@ -65,6 +65,8 @@ function bindActions_() {
 }
 
 function loadCatalogs_() {
+  setStartupLoading_(true);
+
   google.script.run
     .withSuccessHandler(function (catalogs) {
       state.catalogs = catalogs || {};
@@ -81,8 +83,10 @@ function loadCatalogs_() {
       addDefectRow_();
       loadStoredOperators_();
       renderSelectedOperators_();
+      setStartupLoading_(false);
     })
     .withFailureHandler(function (error) {
+      setStartupLoading_(false);
       setMessage_('Falha ao carregar catálogos: ' + (error.message || error), 'error');
     })
     .getCatalogs();
@@ -485,4 +489,18 @@ function appendPlaceholderOption_(select) {
   option.value = '';
   option.textContent = 'Selecione...';
   select.appendChild(option);
+}
+
+function setStartupLoading_(loading) {
+  var loadingBox = document.getElementById('startupLoading');
+  if (!loadingBox) {
+    return;
+  }
+
+  if (loading) {
+    loadingBox.classList.remove('hidden');
+    return;
+  }
+
+  loadingBox.classList.add('hidden');
 }
