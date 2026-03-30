@@ -20,6 +20,18 @@
         align-items: center;
       }
 
+      .controls-table-wrap {
+        max-height: 620px;
+        overflow-y: auto;
+      }
+
+      #inspectionsTable th,
+      #inspectionsTable td {
+        font-size: 12px;
+        line-height: 1.2;
+        white-space: nowrap;
+      }
+
       .pill {
         display: inline-flex;
         align-items: center;
@@ -36,19 +48,6 @@
 
       .pill.warning {
         color: var(--danger);
-      }
-
-      .pagination {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        margin-top: 10px;
-        gap: 8px;
-      }
-
-      .pagination-actions {
-        display: flex;
-        gap: 8px;
       }
 
       .details-list {
@@ -132,8 +131,8 @@
       </section>
 
       <section class="card">
-        <div class="table-wrap">
-          <table>
+        <div class="table-wrap controls-table-wrap">
+          <table id="inspectionsTable">
             <thead>
               <tr>
                 <th class="nowrap">ID</th>
@@ -152,13 +151,7 @@
           </table>
         </div>
 
-        <div class="pagination">
-          <span id="paginationInfo" class="hint">Página 1 de 1</span>
-          <div class="pagination-actions">
-            <button id="prevPageBtn" class="secondary" type="button">Anterior</button>
-            <button id="nextPageBtn" class="secondary" type="button">Próxima</button>
-          </div>
-        </div>
+        <p id="paginationInfo" class="hint">Total: 0</p>
       </section>
 
       <section id="messageBox" class="message" aria-live="polite"></section>
@@ -205,7 +198,7 @@
 
       var listState = {
         page: 1,
-        pageSize: 25,
+        pageSize: 1000,
         totalPages: 1,
         total: 0,
         items: []
@@ -236,22 +229,6 @@
         document.getElementById('clearFiltersBtn').addEventListener('click', function () {
           clearFilters_();
           listState.page = 1;
-          loadInspections_();
-        });
-
-        document.getElementById('prevPageBtn').addEventListener('click', function () {
-          if (listState.page <= 1) {
-            return;
-          }
-          listState.page -= 1;
-          loadInspections_();
-        });
-
-        document.getElementById('nextPageBtn').addEventListener('click', function () {
-          if (listState.page >= listState.totalPages) {
-            return;
-          }
-          listState.page += 1;
           loadInspections_();
         });
 
@@ -291,7 +268,6 @@
         }
 
         setMessage_('Carregando inspeções...', 'info');
-        setPaginationButtonsState_(true);
 
         google.script.run
           .withSuccessHandler(function (response) {
@@ -299,7 +275,7 @@
             listState.items = Array.isArray(result.items) ? result.items : [];
             listState.total = Number(result.total) || 0;
             listState.page = Number(result.page) || 1;
-            listState.pageSize = Number(result.pageSize) || 25;
+            listState.pageSize = Number(result.pageSize) || 1000;
             listState.totalPages = Number(result.totalPages) || 1;
 
             renderTable_(listState.items);
@@ -310,10 +286,8 @@
             } else {
               setMessage_('Total filtrado: ' + listState.total + ' inspeções.', 'success', true);
             }
-            setPaginationButtonsState_(false);
           })
           .withFailureHandler(function (error) {
-            setPaginationButtonsState_(false);
             setMessage_('Falha ao carregar inspeções: ' + (error.message || error), 'error');
           })
           .listInspectionsControls(getFiltersPayload_());
@@ -364,7 +338,7 @@
           retrabalhoCell.appendChild(tag);
           tr.appendChild(retrabalhoCell);
 
-          var actionCell = document.createElement('td');
+      var actionCell = document.createElement('td');
           actionCell.className = 'table-actions';
           var detailsBtn = document.createElement('button');
           detailsBtn.type = 'button';
@@ -388,15 +362,7 @@
 
       function updatePagination_() {
         var info = document.getElementById('paginationInfo');
-        info.textContent = 'Página ' + listState.page + ' de ' + listState.totalPages + ' • Total: ' + listState.total;
-
-        document.getElementById('prevPageBtn').disabled = listState.page <= 1;
-        document.getElementById('nextPageBtn').disabled = listState.page >= listState.totalPages;
-      }
-
-      function setPaginationButtonsState_(disabled) {
-        document.getElementById('prevPageBtn').disabled = !!disabled;
-        document.getElementById('nextPageBtn').disabled = !!disabled;
+        info.textContent = 'Total: ' + listState.total;
       }
 
       function openDetailsModal_(item) {
