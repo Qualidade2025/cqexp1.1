@@ -3,7 +3,8 @@ var state = {
     colaboradores: [],
     posicoes: [],
     defeitos: [],
-    origens: []
+    origens: [],
+    origemObrigatoria: true
   },
   selectedOperators: [],
   messageTimerId: null
@@ -69,6 +70,7 @@ function loadCatalogs_() {
       state.catalogs.defeitos = state.catalogs.defeitos || [];
       state.catalogs.defeitosPorPosicao = state.catalogs.defeitosPorPosicao || {};
       state.catalogs.origens = state.catalogs.origens || [];
+      state.catalogs.origemObrigatoria = !!state.catalogs.origemObrigatoria;
 
       renderOperatorSelectors_();
       renderOrigens_();
@@ -271,8 +273,12 @@ function renderSelectedOperators_() {
 
 function renderOrigens_() {
   var select = document.getElementById('origem');
+  var label = document.getElementById('origemLabel');
   select.innerHTML = '';
   appendPlaceholderOption_(select);
+
+  select.required = !!state.catalogs.origemObrigatoria;
+  label.textContent = state.catalogs.origemObrigatoria ? 'Origem *' : 'Origem';
 
   state.catalogs.origens.forEach(function (origem) {
     var option = document.createElement('option');
@@ -384,10 +390,11 @@ function focusLastQuantidade_() {
 
 function buildPayload_() {
   var defects = Array.prototype.slice.call(document.querySelectorAll('#defectRows tr')).map(function (tr) {
+    var quantidadeField = tr.querySelector('.quantidade');
     return {
       posicao: tr.querySelector('.posicao').value,
       defeito: tr.querySelector('.defeito').value,
-      quantidade: Number(tr.querySelector('.quantidade').value)
+      quantidade: quantidadeField ? String(quantidadeField.value || '').trim() : ''
     };
   });
 
