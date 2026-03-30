@@ -172,13 +172,17 @@
 
 
   .button-with-status {
+    position: relative;
     display: inline-flex;
     align-items: center;
-    gap: 8px;
   }
 
   .inline-status {
-    min-width: 80px;
+    position: absolute;
+    top: calc(100% + 4px);
+    left: 0;
+    min-width: 0;
+    white-space: nowrap;
   }
 
   .operator-selectors {
