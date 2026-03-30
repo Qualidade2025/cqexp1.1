@@ -65,7 +65,8 @@ function getSchemaDefinition_() {
       'operador_4',
       'total_lancamentos_defeitos',
       'defeitos_json',
-      'defeitos_resumo'
+      'defeitos_resumo',
+      'retrabalho'
     ],
     colaboradores: [
       'id_colaborador',
