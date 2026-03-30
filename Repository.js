@@ -296,3 +296,200 @@ function isActiveMatrixFlag_(value) {
 function getPositionDefectKey_(posicao, defeito) {
   return String(posicao).trim() + '||' + String(defeito).trim();
 }
+
+/**
+ * Lista inspeções com filtros e paginação para a página de listagem.
+ */
+function listInspectionsControls_(params) {
+  var filters = params && typeof params === 'object' ? params : {};
+  var pageSize = normalizePageSize_(filters.pageSize);
+  var page = normalizePage_(filters.page);
+  var period = normalizePeriodFilter_(filters.dataInicial, filters.dataFinal);
+  var opFilter = String(filters.op || '').trim().toLowerCase();
+  var origemFilter = String(filters.origem || '').trim().toLowerCase();
+  var operadorFilter = String(filters.operador || '').trim().toLowerCase();
+  var retrabalhoFilter = normalizeRetrabalhoFilter_(filters.retrabalho);
+
+  var sheet = getRequiredSheet_(SHEETS.INSPECOES);
+  var lastRow = sheet.getLastRow();
+  if (lastRow < 2) {
+    return {
+      items: [],
+      total: 0,
+      page: 1,
+      pageSize: pageSize,
+      totalPages: 1
+    };
+  }
+
+  var values = sheet.getRange(2, 1, lastRow - 1, 15).getValues();
+  var normalizedItems = [];
+
+  values.forEach(function (row, index) {
+    var mapped = mapInspectionRow_(row, index + 2);
+    if (!mapped) {
+      return;
+    }
+    if (!matchesInspectionFilters_(mapped, {
+      period: period,
+      op: opFilter,
+      origem: origemFilter,
+      operador: operadorFilter,
+      retrabalho: retrabalhoFilter
+    })) {
+      return;
+    }
+    normalizedItems.push(mapped);
+  });
+
+  normalizedItems.sort(function (a, b) {
+    return b.idInspecao - a.idInspecao;
+  });
+
+  var total = normalizedItems.length;
+  var totalPages = Math.max(1, Math.ceil(total / pageSize));
+  var safePage = Math.min(page, totalPages);
+  var start = (safePage - 1) * pageSize;
+  var end = start + pageSize;
+
+  return {
+    items: normalizedItems.slice(start, end),
+    total: total,
+    page: safePage,
+    pageSize: pageSize,
+    totalPages: totalPages
+  };
+}
+
+function mapInspectionRow_(row, sheetRowNumber) {
+  var id = Number(row[0]);
+  var hasId = isFinite(id) && id > 0;
+  var dataServidor = row[1];
+  var hasDate = dataServidor instanceof Date && !isNaN(dataServidor.getTime());
+
+  if (!hasId || !hasDate) {
+    return null;
+  }
+
+  var operadores = [row[7], row[8], row[9], row[10]]
+    .map(function (value) {
+      return String(value || '').trim();
+    })
+    .filter(function (value) {
+      return value.length > 0;
+    });
+
+  return {
+    idInspecao: Math.floor(id),
+    dataServidorIso: toIsoDateTime_(dataServidor),
+    dataServidorLabel: Utilities.formatDate(dataServidor, Session.getScriptTimeZone(), 'dd/MM/yyyy HH:mm'),
+    op: String(row[2] || '').trim(),
+    qtddRevisada: Number(row[3]) || 0,
+    origem: String(row[4] || '').trim(),
+    cliente: String(row[5] || '').trim(),
+    criadoPorEmail: String(row[6] || '').trim(),
+    operadores: operadores,
+    totalLancamentosDefeitos: Number(row[11]) || 0,
+    defeitosJsonRaw: String(row[12] || '').trim(),
+    defeitosResumo: String(row[13] || '').trim(),
+    retrabalho: isRetrabalhoFlag_(row[14]),
+    sheetRowNumber: sheetRowNumber
+  };
+}
+
+function matchesInspectionFilters_(item, filters) {
+  if (filters.period.start && item.dataServidorIso < filters.period.start) {
+    return false;
+  }
+  if (filters.period.end && item.dataServidorIso > filters.period.end) {
+    return false;
+  }
+
+  if (filters.op && item.op.toLowerCase().indexOf(filters.op) === -1) {
+    return false;
+  }
+
+  if (filters.origem && item.origem.toLowerCase() !== filters.origem) {
+    return false;
+  }
+
+  if (filters.operador) {
+    var hasOperator = item.operadores.some(function (name) {
+      return name.toLowerCase().indexOf(filters.operador) > -1;
+    });
+    if (!hasOperator) {
+      return false;
+    }
+  }
+
+  if (filters.retrabalho === 'sim' && !item.retrabalho) {
+    return false;
+  }
+  if (filters.retrabalho === 'nao' && item.retrabalho) {
+    return false;
+  }
+
+  return true;
+}
+
+function normalizePageSize_(pageSize) {
+  var parsed = Number(pageSize);
+  if (!isFinite(parsed) || parsed < 1) {
+    return 25;
+  }
+  return Math.min(Math.floor(parsed), 100);
+}
+
+function normalizePage_(page) {
+  var parsed = Number(page);
+  if (!isFinite(parsed) || parsed < 1) {
+    return 1;
+  }
+  return Math.floor(parsed);
+}
+
+function normalizePeriodFilter_(startRaw, endRaw) {
+  var start = normalizeDateInput_(startRaw, false);
+  var end = normalizeDateInput_(endRaw, true);
+  return {
+    start: start,
+    end: end
+  };
+}
+
+function normalizeDateInput_(rawValue, endOfDay) {
+  var raw = String(rawValue || '').trim();
+  if (!raw) {
+    return '';
+  }
+
+  var parsed = new Date(raw);
+  if (!(parsed instanceof Date) || isNaN(parsed.getTime())) {
+    return '';
+  }
+
+  if (endOfDay) {
+    parsed.setHours(23, 59, 59, 999);
+  } else {
+    parsed.setHours(0, 0, 0, 0);
+  }
+
+  return toIsoDateTime_(parsed);
+}
+
+function toIsoDateTime_(dateValue) {
+  return Utilities.formatDate(dateValue, Session.getScriptTimeZone(), "yyyy-MM-dd'T'HH:mm:ss");
+}
+
+function normalizeRetrabalhoFilter_(value) {
+  var normalized = String(value || '').trim().toLowerCase();
+  if (normalized === 'sim' || normalized === 'nao') {
+    return normalized;
+  }
+  return 'todos';
+}
+
+function isRetrabalhoFlag_(value) {
+  var normalized = String(value || '').trim().toLowerCase();
+  return normalized === 'x' || normalized === 'true' || normalized === '1' || normalized === 'sim';
+}
