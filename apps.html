@@ -76,10 +76,6 @@ function loadCatalogs_() {
       addDefectRow_();
       loadStoredOperators_();
       renderSelectedOperators_();
-
-      if (!state.selectedOperators.length) {
-        openOperatorModal_(true);
-      }
     })
     .withFailureHandler(function (error) {
       setMessage_('Falha ao carregar catálogos: ' + (error.message || error), 'error');
