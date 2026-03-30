@@ -6,6 +6,79 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Listar controles</title>
     <?!= include('styles') ?>
+    <style>
+      .filters-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+        gap: 10px;
+        margin-bottom: 10px;
+      }
+
+      .table-actions {
+        display: flex;
+        gap: 6px;
+        align-items: center;
+      }
+
+      .pill {
+        display: inline-flex;
+        align-items: center;
+        border-radius: 999px;
+        padding: 4px 8px;
+        font-size: 12px;
+        border: 1px solid var(--border-strong);
+        background: var(--surface-soft);
+      }
+
+      .pill.ok {
+        color: var(--ok);
+      }
+
+      .pill.warning {
+        color: var(--danger);
+      }
+
+      .pagination {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-top: 10px;
+        gap: 8px;
+      }
+
+      .pagination-actions {
+        display: flex;
+        gap: 8px;
+      }
+
+      .details-list {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+        gap: 8px;
+        margin: 10px 0;
+      }
+
+      .details-box {
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        padding: 10px;
+        background: var(--surface-muted);
+      }
+
+      .details-box p {
+        margin: 0;
+        font-size: 13px;
+      }
+
+      #detailsDefectsTable td,
+      #detailsDefectsTable th {
+        font-size: 13px;
+      }
+
+      .nowrap {
+        white-space: nowrap;
+      }
+    </style>
   </head>
   <body>
     <main class="container">
@@ -15,18 +88,380 @@
       </section>
 
       <section class="card">
-        <h2>Listar controles</h2>
-        <p class="hint">
-          Esta página foi carregada corretamente. A listagem será implementada nesta tela.
-        </p>
+        <div class="defect-header">
+          <h2>Listar controles</h2>
+        </div>
+
+        <div class="filters-grid">
+          <label>
+            Data inicial
+            <input id="filterDateStart" type="date" />
+          </label>
+          <label>
+            Data final
+            <input id="filterDateEnd" type="date" />
+          </label>
+          <label>
+            OP
+            <input id="filterOp" type="text" maxlength="50" placeholder="Ex.: OP12345" />
+          </label>
+          <label>
+            Origem
+            <select id="filterOrigem">
+              <option value="">Todas</option>
+            </select>
+          </label>
+          <label>
+            Operador
+            <input id="filterOperador" type="text" maxlength="120" placeholder="Nome ou ID" />
+          </label>
+          <label>
+            Retrabalho
+            <select id="filterRetrabalho">
+              <option value="todos">Todos</option>
+              <option value="sim">Somente retrabalho</option>
+              <option value="nao">Sem retrabalho</option>
+            </select>
+          </label>
+        </div>
+
+        <section class="actions">
+          <button id="applyFiltersBtn" type="button">Filtrar</button>
+          <button id="clearFiltersBtn" class="secondary" type="button">Limpar filtros</button>
+        </section>
       </section>
+
+      <section class="card">
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th class="nowrap">ID</th>
+                <th class="nowrap">Data/Hora</th>
+                <th>OP</th>
+                <th class="nowrap">Qtdd</th>
+                <th>Origem</th>
+                <th>Cliente</th>
+                <th>Operadores</th>
+                <th class="nowrap">Defeitos</th>
+                <th>Retrabalho</th>
+                <th>Ações</th>
+              </tr>
+            </thead>
+            <tbody id="inspectionsRows"></tbody>
+          </table>
+        </div>
+
+        <div class="pagination">
+          <span id="paginationInfo" class="hint">Página 1 de 1</span>
+          <div class="pagination-actions">
+            <button id="prevPageBtn" class="secondary" type="button">Anterior</button>
+            <button id="nextPageBtn" class="secondary" type="button">Próxima</button>
+          </div>
+        </div>
+      </section>
+
+      <section id="messageBox" class="message" aria-live="polite"></section>
     </main>
+
+    <div id="detailsModal" class="modal-backdrop hidden" role="dialog" aria-modal="true" aria-labelledby="detailsModalTitle">
+      <section class="modal-card">
+        <div class="modal-header">
+          <h3 id="detailsModalTitle">Detalhes da inspeção</h3>
+          <button id="closeDetailsBtn" class="icon-btn" type="button" aria-label="Fechar modal">×</button>
+        </div>
+
+        <div class="details-list">
+          <div class="details-box"><p><strong>ID:</strong> <span id="detailsId"></span></p></div>
+          <div class="details-box"><p><strong>Data:</strong> <span id="detailsDate"></span></p></div>
+          <div class="details-box"><p><strong>OP:</strong> <span id="detailsOp"></span></p></div>
+          <div class="details-box"><p><strong>Criado por:</strong> <span id="detailsEmail"></span></p></div>
+          <div class="details-box"><p><strong>Origem:</strong> <span id="detailsOrigem"></span></p></div>
+          <div class="details-box"><p><strong>Retrabalho:</strong> <span id="detailsRetrabalho"></span></p></div>
+        </div>
+
+        <p class="hint" id="detailsOperators"></p>
+
+        <div class="table-wrap" style="margin-top: 8px;">
+          <table id="detailsDefectsTable">
+            <thead>
+              <tr>
+                <th>Linha</th>
+                <th>Posição</th>
+                <th>Defeito</th>
+                <th>Quantidade</th>
+              </tr>
+            </thead>
+            <tbody id="detailsDefectsRows"></tbody>
+          </table>
+        </div>
+
+        <p id="detailsFallback" class="hint" style="margin-top: 8px;"></p>
+      </section>
+    </div>
 
     <script>
       window.APP_BASE_URL = <?!= JSON.stringify(appBaseUrl || '') ?>;
 
+      var listState = {
+        page: 1,
+        pageSize: 25,
+        totalPages: 1,
+        total: 0,
+        items: []
+      };
+
       if (typeof window.initThemeToggle_ === 'function') {
         window.initThemeToggle_();
+      }
+
+      function initPage_() {
+        bindActions_();
+        loadCatalogsForFilters_();
+        loadInspections_();
+      }
+
+      if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', initPage_);
+      } else {
+        initPage_();
+      }
+
+      function bindActions_() {
+        document.getElementById('applyFiltersBtn').addEventListener('click', function () {
+          listState.page = 1;
+          loadInspections_();
+        });
+
+        document.getElementById('clearFiltersBtn').addEventListener('click', function () {
+          clearFilters_();
+          listState.page = 1;
+          loadInspections_();
+        });
+
+        document.getElementById('prevPageBtn').addEventListener('click', function () {
+          if (listState.page <= 1) {
+            return;
+          }
+          listState.page -= 1;
+          loadInspections_();
+        });
+
+        document.getElementById('nextPageBtn').addEventListener('click', function () {
+          if (listState.page >= listState.totalPages) {
+            return;
+          }
+          listState.page += 1;
+          loadInspections_();
+        });
+
+        document.getElementById('closeDetailsBtn').addEventListener('click', closeDetailsModal_);
+      }
+
+      function loadCatalogsForFilters_() {
+        if (!window.google || !google.script || !google.script.run) {
+          return;
+        }
+
+        google.script.run
+          .withSuccessHandler(function (catalogs) {
+            var origemSelect = document.getElementById('filterOrigem');
+            var origens = catalogs && Array.isArray(catalogs.origens) ? catalogs.origens : [];
+
+            origens.forEach(function (origem) {
+              var value = String(origem || '').trim();
+              if (!value) {
+                return;
+              }
+
+              var option = document.createElement('option');
+              option.value = value;
+              option.textContent = value;
+              origemSelect.appendChild(option);
+            });
+          })
+          .withFailureHandler(function () {})
+          .getCatalogs();
+      }
+
+      function loadInspections_() {
+        if (!window.google || !google.script || !google.script.run) {
+          setMessage_('Ambiente do Apps Script indisponível para listar inspeções.', 'error');
+          return;
+        }
+
+        setMessage_('Carregando inspeções...', 'info');
+        setPaginationButtonsState_(true);
+
+        google.script.run
+          .withSuccessHandler(function (response) {
+            var result = response || {};
+            listState.items = Array.isArray(result.items) ? result.items : [];
+            listState.total = Number(result.total) || 0;
+            listState.page = Number(result.page) || 1;
+            listState.pageSize = Number(result.pageSize) || 25;
+            listState.totalPages = Number(result.totalPages) || 1;
+
+            renderTable_(listState.items);
+            updatePagination_();
+
+            if (!listState.items.length) {
+              setMessage_('Nenhum controle encontrado para os filtros informados.', 'info');
+            } else {
+              setMessage_('Total filtrado: ' + listState.total + ' inspeções.', 'success', true);
+            }
+            setPaginationButtonsState_(false);
+          })
+          .withFailureHandler(function (error) {
+            setPaginationButtonsState_(false);
+            setMessage_('Falha ao carregar inspeções: ' + (error.message || error), 'error');
+          })
+          .listInspectionsControls(getFiltersPayload_());
+      }
+
+      function getFiltersPayload_() {
+        return {
+          page: listState.page,
+          pageSize: listState.pageSize,
+          dataInicial: String(document.getElementById('filterDateStart').value || '').trim(),
+          dataFinal: String(document.getElementById('filterDateEnd').value || '').trim(),
+          op: String(document.getElementById('filterOp').value || '').trim(),
+          origem: String(document.getElementById('filterOrigem').value || '').trim(),
+          operador: String(document.getElementById('filterOperador').value || '').trim(),
+          retrabalho: String(document.getElementById('filterRetrabalho').value || 'todos').trim()
+        };
+      }
+
+      function clearFilters_() {
+        document.getElementById('filterDateStart').value = '';
+        document.getElementById('filterDateEnd').value = '';
+        document.getElementById('filterOp').value = '';
+        document.getElementById('filterOrigem').value = '';
+        document.getElementById('filterOperador').value = '';
+        document.getElementById('filterRetrabalho').value = 'todos';
+      }
+
+      function renderTable_(items) {
+        var tbody = document.getElementById('inspectionsRows');
+        tbody.innerHTML = '';
+
+        items.forEach(function (item, index) {
+          var tr = document.createElement('tr');
+
+          appendCell_(tr, String(item.idInspecao || ''));
+          appendCell_(tr, item.dataServidorLabel || '-');
+          appendCell_(tr, item.op || '-');
+          appendCell_(tr, String(item.qtddRevisada || 0));
+          appendCell_(tr, item.origem || '-');
+          appendCell_(tr, item.cliente || '-');
+          appendCell_(tr, (item.operadores || []).join(', ') || '-');
+          appendCell_(tr, String(item.totalLancamentosDefeitos || 0));
+
+          var retrabalhoCell = document.createElement('td');
+          var tag = document.createElement('span');
+          tag.className = 'pill ' + (item.retrabalho ? 'warning' : 'ok');
+          tag.textContent = item.retrabalho ? 'Sim' : 'Não';
+          retrabalhoCell.appendChild(tag);
+          tr.appendChild(retrabalhoCell);
+
+          var actionCell = document.createElement('td');
+          actionCell.className = 'table-actions';
+          var detailsBtn = document.createElement('button');
+          detailsBtn.type = 'button';
+          detailsBtn.className = 'secondary';
+          detailsBtn.textContent = 'Ver detalhes';
+          detailsBtn.addEventListener('click', function () {
+            openDetailsModal_(items[index]);
+          });
+          actionCell.appendChild(detailsBtn);
+          tr.appendChild(actionCell);
+
+          tbody.appendChild(tr);
+        });
+      }
+
+      function appendCell_(tr, value) {
+        var td = document.createElement('td');
+        td.textContent = value;
+        tr.appendChild(td);
+      }
+
+      function updatePagination_() {
+        var info = document.getElementById('paginationInfo');
+        info.textContent = 'Página ' + listState.page + ' de ' + listState.totalPages + ' • Total: ' + listState.total;
+
+        document.getElementById('prevPageBtn').disabled = listState.page <= 1;
+        document.getElementById('nextPageBtn').disabled = listState.page >= listState.totalPages;
+      }
+
+      function setPaginationButtonsState_(disabled) {
+        document.getElementById('prevPageBtn').disabled = !!disabled;
+        document.getElementById('nextPageBtn').disabled = !!disabled;
+      }
+
+      function openDetailsModal_(item) {
+        if (!item) {
+          return;
+        }
+
+        document.getElementById('detailsId').textContent = String(item.idInspecao || '-');
+        document.getElementById('detailsDate').textContent = item.dataServidorLabel || '-';
+        document.getElementById('detailsOp').textContent = item.op || '-';
+        document.getElementById('detailsEmail').textContent = item.criadoPorEmail || '-';
+        document.getElementById('detailsOrigem').textContent = item.origem || '-';
+        document.getElementById('detailsRetrabalho').textContent = item.retrabalho ? 'Sim' : 'Não';
+        document.getElementById('detailsOperators').textContent = 'Operadores: ' + ((item.operadores || []).join(', ') || '-');
+
+        var detailsRows = document.getElementById('detailsDefectsRows');
+        var fallback = document.getElementById('detailsFallback');
+        detailsRows.innerHTML = '';
+        fallback.textContent = '';
+
+        var parsed = parseDefectsPayload_(item.defeitosJsonRaw);
+        if (parsed && parsed.length) {
+          parsed.forEach(function (defect, idx) {
+            var tr = document.createElement('tr');
+            appendCell_(tr, String(defect.linha || idx + 1));
+            appendCell_(tr, String(defect.posicao || '-'));
+            appendCell_(tr, String(defect.defeito || '-'));
+            appendCell_(tr, String(defect.quantidade || 0));
+            detailsRows.appendChild(tr);
+          });
+        } else {
+          var tr = document.createElement('tr');
+          var emptyCell = document.createElement('td');
+          emptyCell.colSpan = 4;
+          emptyCell.textContent = 'Sem defeitos detalhados no JSON.';
+          tr.appendChild(emptyCell);
+          detailsRows.appendChild(tr);
+
+          if (item.defeitosResumo) {
+            fallback.textContent = 'Resumo: ' + item.defeitosResumo;
+          }
+        }
+
+        document.getElementById('detailsModal').classList.remove('hidden');
+      }
+
+      function parseDefectsPayload_(raw) {
+        var normalized = String(raw || '').trim();
+        if (!normalized) {
+          return [];
+        }
+
+        try {
+          var parsed = JSON.parse(normalized);
+          if (Array.isArray(parsed)) {
+            return parsed;
+          }
+          return [];
+        } catch (error) {
+          return [];
+        }
+      }
+
+      function closeDetailsModal_() {
+        document.getElementById('detailsModal').classList.add('hidden');
       }
 
       function navigateToMainPage_(url) {
@@ -46,6 +481,21 @@
         var fallbackUrl = new URL(window.location.href);
         fallbackUrl.searchParams.set('page', 'index');
         navigateToMainPage_(fallbackUrl.toString());
+      }
+
+      function setMessage_(text, type, autoClear) {
+        var messageBox = document.getElementById('messageBox');
+        messageBox.textContent = text || '';
+        messageBox.className = 'message' + (type ? ' ' + type : '');
+
+        if (autoClear) {
+          window.setTimeout(function () {
+            if (messageBox.textContent === text) {
+              messageBox.textContent = '';
+              messageBox.className = 'message';
+            }
+          }, 3500);
+        }
       }
     </script>
   </body>
