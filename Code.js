@@ -95,7 +95,8 @@ function saveInspection(payload) {
       JSON.stringify(defects),
       defects.map(function (item) {
         return item.posicao + ' / ' + item.defeito + ' / ' + item.quantidade;
-      }).join(' | ')
+      }).join(' | '),
+      payload.retrabalho ? 'X' : ''
     ]]);
 
     return {
