@@ -11,6 +11,7 @@
     <main class="container">
       <section class="top-actions">
         <button class="secondary" type="button" onclick="goBack_()">← Voltar</button>
+        <button class="secondary theme-toggle" type="button" data-theme-toggle aria-label="Alternar tema">🌙</button>
       </section>
 
       <section class="card">
@@ -23,6 +24,10 @@
 
     <script>
       window.APP_BASE_URL = <?!= JSON.stringify(appBaseUrl || '') ?>;
+
+      if (typeof window.initThemeToggle_ === 'function') {
+        window.initThemeToggle_();
+      }
 
       function navigateToMainPage_(url) {
         try {
