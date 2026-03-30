@@ -22,10 +22,20 @@
     </main>
 
     <script>
+      window.APP_BASE_URL = <?!= JSON.stringify(appBaseUrl || '') ?>;
+
       function goBack_() {
-        var url = new URL(window.location.href);
-        url.searchParams.delete('page');
-        window.location.href = url.toString();
+        if (window.APP_BASE_URL) {
+          window.location.href = window.APP_BASE_URL;
+          return;
+        }
+
+        var currentUrl = window.location.href;
+        var urlWithoutPage = currentUrl
+          .replace(/([?&])page=[^&]*/g, '$1')
+          .replace(/[?&]$/, '');
+
+        window.location.href = urlWithoutPage;
       }
     </script>
   </body>
