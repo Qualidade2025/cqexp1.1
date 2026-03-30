@@ -37,6 +37,7 @@
 
       <section class="actions">
         <button id="saveBtn" type="button">Salvar</button>
+        <span id="saveStatus" class="hint" aria-live="polite"></span>
       </section>
 
       <section id="messageBox" class="message" aria-live="polite"></section>
@@ -233,16 +234,24 @@
       }
 
       function saveChanges_() {
+        var saveBtn = document.getElementById('saveBtn');
+        var saveStatus = document.getElementById('saveStatus');
+
         if (!window.google || !google.script || !google.script.run) {
           setMessage_('Falha ao salvar colaboradores: ambiente do Apps Script indisponível.', 'error');
           return;
         }
+
+        saveBtn.disabled = true;
+        saveStatus.textContent = 'Salvando...';
 
         google.script.run
           .withSuccessHandler(function () {
             goBack_();
           })
           .withFailureHandler(function (error) {
+            saveBtn.disabled = false;
+            saveStatus.textContent = '';
             setMessage_('Falha ao salvar colaboradores: ' + (error.message || error), 'error');
           })
           .saveCollaboratorsControls(collectRows_());
