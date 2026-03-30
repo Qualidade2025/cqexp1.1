@@ -16,37 +16,41 @@
 
       <div id="selectedOperators" class="selected-operators">Nenhum operador selecionado.</div>
 
-      <section class="form-grid">
-        <label>
-          OP *
-          <input id="op" type="text" maxlength="50" placeholder="Ex.: OP12345" />
-        </label>
+      <section class="card">
+        <div class="section-header">
+          <h2>Identificação</h2>
+        </div>
+        <section class="form-grid">
+          <label>
+            OP *
+            <input id="op" type="text" maxlength="50" placeholder="Ex.: OP12345" />
+          </label>
 
-        <label>
-          Qtdd Revisada *
-          <input id="qtddRevisada" type="number" min="1" step="1" />
-        </label>
+          <label>
+            Qtdd Revisada *
+            <input id="qtddRevisada" type="number" min="1" step="1" />
+          </label>
 
-        <label>
-          <span id="origemLabel">Origem</span>
-          <select id="origem"></select>
-        </label>
+          <label>
+            <span id="origemLabel">Origem</span>
+            <select id="origem"></select>
+          </label>
 
-        <label>
-          Cliente (manual por enquanto)
-          <input id="clienteManual" type="text" maxlength="120" placeholder="Ex.: Cliente XYZ" />
-        </label>
+          <label>
+            Cliente (manual por enquanto)
+            <input id="clienteManual" type="text" maxlength="120" placeholder="Ex.: Cliente XYZ" />
+          </label>
 
-        <label class="checkbox-row">
-          <input id="retrabalho" type="checkbox" />
-          Retrabalho
-        </label>
-
+          <label class="checkbox-row">
+            <input id="retrabalho" type="checkbox" />
+            Retrabalho
+          </label>
+        </section>
       </section>
 
       <section class="card">
         <div class="defect-header">
-          <h2>Lançamentos de Defeitos</h2>
+          <h2>Defeitos</h2>
           <button id="addDefectBtn" class="secondary" type="button">+ Adicionar lançamento</button>
         </div>
 
