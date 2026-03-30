@@ -14,7 +14,7 @@ function doGet(e) {
   template.appBaseUrl = getAppBaseUrl_();
 
   return template.evaluate()
-    .setTitle('CQ Expedição - MVP')
+    .setTitle('Controle de Qualidade - BALDI')
     .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL);
 }
 
@@ -179,4 +179,41 @@ function validateCollaboratorsPassword(password) {
   return {
     ok: true
   };
+}
+
+function listCollaboratorsControls() {
+  return getCollaboratorsForControlList_();
+}
+
+function saveCollaboratorsControls(rows) {
+  if (!Array.isArray(rows) || !rows.length) {
+    throw new Error('Adicione ao menos um colaborador.');
+  }
+
+  var normalized = [];
+  var ids = {};
+
+  rows.forEach(function (row, index) {
+    var id = row && row.id ? String(row.id).trim() : '';
+    var name = row && row.name ? String(row.name).trim() : '';
+    var active = !!(row && row.active);
+
+    if (!id) {
+      throw new Error('Linha ' + (index + 1) + ': informe o ID.');
+    }
+
+    if (!name) {
+      throw new Error('Linha ' + (index + 1) + ': informe o nome.');
+    }
+
+    if (ids[id]) {
+      throw new Error('ID duplicado: ' + id + '.');
+    }
+    ids[id] = true;
+
+    normalized.push([id, name, active]);
+  });
+
+  saveCollaboratorsControlList_(normalized);
+  return { ok: true };
 }
