@@ -1,11 +1,10 @@
 <!DOCTYPE html>
-
 <html>
   <head>
     <base target="_top" />
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Listar controles</title>
+    <title>Colaboradores</title>
     <?!= include('styles') ?>
   </head>
   <body>
@@ -16,11 +15,31 @@
       </section>
 
       <section class="card">
-        <h2>Listar controles</h2>
-        <p class="hint">
-          Esta página foi carregada corretamente. A listagem será implementada nesta tela.
-        </p>
+        <div class="defect-header">
+          <h2>Colaboradores</h2>
+          <button id="addCollaboratorBtn" class="secondary" type="button">+ Adicionar colaborador</button>
+        </div>
+
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>Nome</th>
+                <th>Ativo</th>
+                <th>Ações</th>
+              </tr>
+            </thead>
+            <tbody id="collaboratorsRows"></tbody>
+          </table>
+        </div>
       </section>
+
+      <section class="actions">
+        <button id="saveBtn" type="button">Salvar</button>
+      </section>
+
+      <section id="messageBox" class="message" aria-live="polite"></section>
     </main>
 
     <script>
@@ -29,6 +48,15 @@
       if (typeof window.initThemeToggle_ === 'function') {
         window.initThemeToggle_();
       }
+
+      document.addEventListener('DOMContentLoaded', function () {
+        document.getElementById('addCollaboratorBtn').addEventListener('click', function () {
+          addRow_({ id: '', name: '', active: true, isNew: true, isEditing: true });
+        });
+
+        document.getElementById('saveBtn').addEventListener('click', saveChanges_);
+        loadRows_();
+      });
 
       function navigateToMainPage_(url) {
         try {
@@ -47,6 +75,116 @@
         var fallbackUrl = new URL(window.location.href);
         fallbackUrl.searchParams.set('page', 'index');
         navigateToMainPage_(fallbackUrl.toString());
+      }
+
+      function loadRows_() {
+        setMessage_('Carregando colaboradores...', 'info');
+
+        google.script.run
+          .withSuccessHandler(function (rows) {
+            renderRows_(Array.isArray(rows) ? rows : []);
+            setMessage_('', 'info');
+          })
+          .withFailureHandler(function (error) {
+            setMessage_('Falha ao carregar colaboradores: ' + (error.message || error), 'error');
+          })
+          .listCollaboratorsControls();
+      }
+
+      function renderRows_(rows) {
+        var tbody = document.getElementById('collaboratorsRows');
+        tbody.innerHTML = '';
+
+        rows.forEach(function (row) {
+          addRow_(row);
+        });
+      }
+
+      function addRow_(row) {
+        var tbody = document.getElementById('collaboratorsRows');
+        var tr = document.createElement('tr');
+
+        var isNew = !!row.isNew;
+        var isEditing = !!row.isEditing;
+
+        var idCell = document.createElement('td');
+        var idInput = document.createElement('input');
+        idInput.type = 'text';
+        idInput.maxLength = 50;
+        idInput.value = String(row.id || '').trim();
+        idInput.disabled = !(isEditing && isNew);
+        idInput.placeholder = 'ID';
+        idCell.appendChild(idInput);
+
+        var nameCell = document.createElement('td');
+        var nameInput = document.createElement('input');
+        nameInput.type = 'text';
+        nameInput.maxLength = 120;
+        nameInput.value = String(row.name || '').trim();
+        nameInput.disabled = !isEditing;
+        nameInput.placeholder = 'Nome';
+        nameCell.appendChild(nameInput);
+
+        var activeCell = document.createElement('td');
+        var activeInput = document.createElement('input');
+        activeInput.type = 'checkbox';
+        activeInput.checked = row.active !== false;
+        activeInput.disabled = !isEditing;
+        activeCell.appendChild(activeInput);
+
+        var actionCell = document.createElement('td');
+        var editBtn = document.createElement('button');
+        editBtn.type = 'button';
+        editBtn.className = 'secondary';
+        editBtn.textContent = isEditing ? 'Concluir' : 'Editar';
+
+        editBtn.addEventListener('click', function () {
+          var nowEditing = editBtn.textContent === 'Editar';
+          editBtn.textContent = nowEditing ? 'Concluir' : 'Editar';
+          nameInput.disabled = !nowEditing;
+          activeInput.disabled = !nowEditing;
+          if (isNew) {
+            idInput.disabled = !nowEditing;
+          }
+        });
+
+        actionCell.appendChild(editBtn);
+
+        tr.appendChild(idCell);
+        tr.appendChild(nameCell);
+        tr.appendChild(activeCell);
+        tr.appendChild(actionCell);
+
+        tbody.appendChild(tr);
+      }
+
+      function collectRows_() {
+        var bodyRows = Array.prototype.slice.call(document.querySelectorAll('#collaboratorsRows tr'));
+
+        return bodyRows.map(function (tr) {
+          return {
+            id: String(tr.cells[0].querySelector('input').value || '').trim(),
+            name: String(tr.cells[1].querySelector('input').value || '').trim(),
+            active: !!tr.cells[2].querySelector('input').checked
+          };
+        });
+      }
+
+      function saveChanges_() {
+        google.script.run
+          .withSuccessHandler(function () {
+            goBack_();
+          })
+          .withFailureHandler(function (error) {
+            setMessage_('Falha ao salvar colaboradores: ' + (error.message || error), 'error');
+          })
+          .saveCollaboratorsControls(collectRows_());
+      }
+
+      function setMessage_(text, type) {
+        var messageBox = document.getElementById('messageBox');
+        messageBox.textContent = text || '';
+        messageBox.className = 'message' + (type ? ' ' + type : '');
       }
     </script>
   </body>
