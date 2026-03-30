@@ -150,9 +150,24 @@ function closeOperatorModal_() {
 }
 
 function openAppPage_(page) {
-  var url = new URL(window.location.href);
-  url.searchParams.set('page', page);
-  window.location.href = url.toString();
+  window.location.href = buildAppUrl_(page);
+}
+
+function buildAppUrl_(page) {
+  var baseUrl = String(window.APP_BASE_URL || '').trim();
+
+  if (!baseUrl) {
+    var currentUrl = window.location.href;
+    if (currentUrl.indexOf('?') === -1) {
+      return currentUrl + '?page=' + encodeURIComponent(page);
+    }
+    if (/[?&]page=/.test(currentUrl)) {
+      return currentUrl.replace(/([?&])page=[^&]*/g, '$1page=' + encodeURIComponent(page));
+    }
+    return currentUrl + '&page=' + encodeURIComponent(page);
+  }
+
+  return baseUrl + '?page=' + encodeURIComponent(page);
 }
 
 function openPasswordModal_() {
