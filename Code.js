@@ -217,3 +217,7 @@ function saveCollaboratorsControls(rows) {
   saveCollaboratorsControlList_(normalized);
   return { ok: true };
 }
+
+function listInspectionsControls(params) {
+  return listInspectionsControls_(params);
+}
