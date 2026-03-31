@@ -3,6 +3,7 @@ var SHEETS = {
   COLABORADORES: 'colaboradores',
   CAD_DEFEITOS: 'cad_defeitos',
   CAD_ORIGENS: 'cad_origens',
+  OP_CLIENTE: 'op_cliente',
   VIEW_RELACOES_ATIVAS: 'view_relacoes_ativas',
   VIEW_POSICOES_ATIVAS: 'view_posicoes_ativas',
   VIEW_DEFEITOS_ATIVOS: 'view_defeitos_ativos'
