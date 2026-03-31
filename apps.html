@@ -32,6 +32,17 @@ function bindActions_() {
     addDefectRow_();
   });
 
+  document.getElementById('buscarClienteBtn').addEventListener('click', function () {
+    buscarClientePorOP_();
+  });
+
+  document.getElementById('op').addEventListener('keydown', function (event) {
+    if (event.key === 'Enter') {
+      event.preventDefault();
+      buscarClientePorOP_();
+    }
+  });
+
   document.getElementById('saveBtn').addEventListener('click', function () {
     saveInspection_();
   });
@@ -462,6 +473,41 @@ function saveInspection_() {
       setMessage_(error.message || String(error), 'error');
     })
     .saveInspection(payload);
+}
+
+function buscarClientePorOP_() {
+  var op = document.getElementById('op').value.trim();
+  var clienteField = document.getElementById('clienteManual');
+  var buscarBtn = document.getElementById('buscarClienteBtn');
+
+  if (!op) {
+    clienteField.value = '';
+    setMessage_('Informe uma OP para buscar o cliente.', 'error');
+    return;
+  }
+
+  buscarBtn.disabled = true;
+  setMessage_('Buscando cliente...', 'info');
+
+  google.script.run
+    .withSuccessHandler(function (result) {
+      buscarBtn.disabled = false;
+
+      if (!result) {
+        clienteField.value = '';
+        setMessage_('OP não encontrada.', 'error');
+        return;
+      }
+
+      clienteField.value = result.cliente || '';
+      setMessage_('Cliente carregado automaticamente para OP ' + result.op + '.', 'success', true);
+    })
+    .withFailureHandler(function () {
+      buscarBtn.disabled = false;
+      clienteField.value = '';
+      setMessage_('Falha ao consultar cliente. Verifique conexão e tente novamente.', 'error');
+    })
+    .buscarClientePorOP(op);
 }
 
 function resetForm_() {
