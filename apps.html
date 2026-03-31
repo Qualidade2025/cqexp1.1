@@ -11,6 +11,7 @@ var state = {
 };
 
 var STORAGE_KEY = 'cqexp.selectedOperators';
+var STORAGE_DATE_KEY = 'cqexp.selectedOperatorsDate';
 var OPERATOR_SLOTS = [1, 2, 3, 4];
 
 document.addEventListener('DOMContentLoaded', function () {
@@ -95,6 +96,15 @@ function loadCatalogs_() {
 
 function loadStoredOperators_() {
   try {
+    var today = new Date().toISOString().slice(0, 10);
+    var storedDate = window.localStorage.getItem(STORAGE_DATE_KEY);
+    if (storedDate !== today) {
+      state.selectedOperators = [];
+      window.localStorage.removeItem(STORAGE_KEY);
+      window.localStorage.removeItem(STORAGE_DATE_KEY);
+      return;
+    }
+
     var raw = window.localStorage.getItem(STORAGE_KEY);
     if (!raw) {
       return;
@@ -115,6 +125,7 @@ function loadStoredOperators_() {
 
 function persistOperators_() {
   window.localStorage.setItem(STORAGE_KEY, JSON.stringify(state.selectedOperators));
+  window.localStorage.setItem(STORAGE_DATE_KEY, new Date().toISOString().slice(0, 10));
 }
 
 function renderOperatorSelectors_() {
