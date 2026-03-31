@@ -85,6 +85,13 @@
         text-align: left;
       }
 
+      #inspectionsTable th.cliente-col,
+      #inspectionsTable td.cliente-col {
+        max-width: 200px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+
       .sort-trigger {
         width: 100%;
         border: none;
@@ -329,7 +336,7 @@
                 <th data-sort-key="op" data-sort-type="alpha">
                   <button type="button" class="sort-trigger"><span class="sort-label">OP</span><span class="sort-indicator"></span></button>
                 </th>
-                <th data-sort-key="cliente" data-sort-type="alpha">
+                <th class="cliente-col" data-sort-key="cliente" data-sort-type="alpha">
                   <button type="button" class="sort-trigger"><span class="sort-label">Cliente</span><span class="sort-indicator"></span></button>
                 </th>
                 <th class="nowrap" data-sort-key="qtddRevisada" data-sort-type="numeric">
@@ -813,7 +820,7 @@
           appendCell_(tr, String(item.idInspecao || ''), 'cell-center');
           appendCell_(tr, item.dataServidorLabel || '-', 'cell-center');
           appendCell_(tr, item.op || '-', 'cell-center');
-          appendCell_(tr, item.cliente || '-', 'cell-center');
+          appendCell_(tr, item.cliente || '-', 'cell-center cliente-col', item.cliente || '-');
           appendCell_(tr, String(item.qtddRevisada || 0), 'cell-center');
           appendCell_(tr, item.origem || '-', 'cell-center');
           appendCell_(tr, (item.operadores || []).join(', ') || '-', 'cell-left');
@@ -843,12 +850,16 @@
         });
       }
 
-      function appendCell_(tr, value, className) {
+      function appendCell_(tr, value, className, titleValue) {
         var td = document.createElement('td');
         if (className) {
           td.className = className;
         }
         td.textContent = value;
+        var normalizedTitle = String(typeof titleValue !== 'undefined' ? titleValue : value || '').trim();
+        if (normalizedTitle) {
+          td.title = normalizedTitle;
+        }
         tr.appendChild(td);
       }
 
