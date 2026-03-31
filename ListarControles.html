@@ -174,10 +174,22 @@
 
       .edit-form-grid {
         display: grid;
-        grid-template-columns: repeat(2, minmax(0, 1fr));
+        grid-template-columns: repeat(5, minmax(0, 1fr));
         gap: 10px;
         margin-top: 8px;
       }
+      .field-row1-col1 { grid-column: 1; }
+      .field-row1-col2 { grid-column: 2; }
+      .field-row1-col3 { grid-column: 3; }
+      .field-row1-col4 { grid-column: 4; }
+      .field-row2-col1 { grid-column: 1; }
+      .field-row2-col2 { grid-column: 2; }
+      .field-row2-col3 { grid-column: 3; }
+      .field-row3-col1 { grid-column: 1; }
+      .field-row3-col2 { grid-column: 2; }
+      .field-row3-col3 { grid-column: 3; }
+      .field-row3-col4 { grid-column: 4; }
+      .field-row3-col5 { grid-column: 5; }
 
       .edit-form-grid label {
         margin: 0;
@@ -230,6 +242,12 @@
       }
 
       @media (max-width: 920px) {
+        .edit-form-grid {
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+      }
+
+      @media (max-width: 620px) {
         .edit-form-grid {
           grid-template-columns: 1fr;
         }
@@ -392,56 +410,56 @@
               <h2>Identificação</h2>
             </div>
             <div class="edit-form-grid">
-              <label>
+             <label class="field-row1-col1">
+                Data/Hora
+                <input id="editDataServidor" type="datetime-local" readonly />
+              </label>
+              <label class="field-row1-col2">
                 ID
                 <input id="editIdInspecao" type="text" readonly />
               </label>
-              <label>
-                Data/Hora
-                <input id="editDataServidor" type="datetime-local" />
-              </label>
-              <label>
-                OP
-                <input id="editOp" type="text" maxlength="80" />
-              </label>
-              <label>
-                Quantidade revisada
-                <input id="editQtddRevisada" type="number" min="0" step="1" />
-              </label>
-              <label>
-                Origem
-                <input id="editOrigem" type="text" maxlength="120" />
-              </label>
-              <label>
-                Cliente
-                <input id="editCliente" type="text" maxlength="180" />
-              </label>
-              <label>
-                Criado por (e-mail)
-                <input id="editCriadoPorEmail" type="email" maxlength="180" />
-              </label>
-              <label>
+              <label class="field-row1-col3">
                 Retrabalho
                 <select id="editRetrabalho">
                   <option value="nao">Não</option>
                   <option value="sim">Sim</option>
                 </select>
               </label>
-              <label>
+              <label class="field-row1-col4">
+                Origem
+                <select id="editOrigem"></select>
+              </label>
+              <label class="field-row2-col1">
+                OP
+                <input id="editOp" type="text" maxlength="80" />
+              </label>
+              <label class="field-row2-col2">
+                Quantidade revisada
+                <input id="editQtddRevisada" type="number" min="0" step="1" />
+              </label>
+              <label class="field-row2-col3">
+                Cliente
+                <input id="editCliente" type="text" maxlength="180" />
+              </label>
+              <label class="field-row3-col1">
+                Criado por (e-mail)
+                <input id="editCriadoPorEmail" type="email" maxlength="180" readonly />
+              </label>
+              <label class="field-row3-col2">
                 Operador 1
-                <input id="editOperador1" type="text" maxlength="180" />
+                <select id="editOperador1"></select>
               </label>
-              <label>
+              <label class="field-row3-col3">
                 Operador 2
-                <input id="editOperador2" type="text" maxlength="180" />
+                <select id="editOperador2"></select>
               </label>
-              <label>
+              <label class="field-row3-col4">
                 Operador 3
-                <input id="editOperador3" type="text" maxlength="180" />
+                <select id="editOperador3"></select>
               </label>
-              <label>
+              <label class="field-row3-col5">
                 Operador 4
-                <input id="editOperador4" type="text" maxlength="180" />
+                <select id="editOperador4"></select>
               </label>
             </div>
           </section>
@@ -478,6 +496,13 @@
       </section>
     </div>
 
+    <div id="editSavingOverlay" class="startup-loading hidden" role="status" aria-live="polite">
+      <div class="startup-loading-card">
+        <span class="loading-spinner" aria-hidden="true"></span>
+        <span>Salvando edição...</span>
+      </div>
+    </div>
+
     <script>
       window.APP_BASE_URL = <?!= JSON.stringify(appBaseUrl || '') ?>;
 
@@ -495,6 +520,8 @@
       };
       var currentDetailsItem = null;
       var editCatalogs = {
+        origens: [],
+        colaboradores: [],
         posicoes: [],
         defeitosPorPosicao: {}
       };
@@ -568,6 +595,9 @@
           .withSuccessHandler(function (catalogs) {
             var origemSelect = document.getElementById('filterOrigem');
             var origens = catalogs && Array.isArray(catalogs.origens) ? catalogs.origens : [];
+            var colaboradores = catalogs && Array.isArray(catalogs.colaboradores) ? catalogs.colaboradores : [];
+            editCatalogs.origens = origens;
+            editCatalogs.colaboradores = colaboradores;
             editCatalogs.posicoes = catalogs && Array.isArray(catalogs.posicoes) ? catalogs.posicoes : [];
             editCatalogs.defeitosPorPosicao = catalogs && catalogs.defeitosPorPosicao ? catalogs.defeitosPorPosicao : {};
 
@@ -582,9 +612,83 @@
               option.textContent = value;
               origemSelect.appendChild(option);
             });
+
+            renderEditCatalogSelects_();
           })
           .withFailureHandler(function () {})
           .getCatalogs();
+      }
+
+      function renderEditCatalogSelects_() {
+        fillSelectWithValues_(document.getElementById('editOrigem'), editCatalogs.origens);
+
+        ['editOperador1', 'editOperador2', 'editOperador3', 'editOperador4'].forEach(function (id) {
+          fillOperatorSelect_(document.getElementById(id), editCatalogs.colaboradores);
+        });
+      }
+
+      function fillSelectWithValues_(select, values) {
+        if (!select) {
+          return;
+        }
+
+        select.innerHTML = '';
+        appendPlaceholderOption_(select);
+        (values || []).forEach(function (entry) {
+          var normalized = String(entry || '').trim();
+          if (!normalized) {
+            return;
+          }
+          var option = document.createElement('option');
+          option.value = normalized;
+          option.textContent = normalized;
+          select.appendChild(option);
+        });
+      }
+
+      function fillOperatorSelect_(select, colaboradores) {
+        if (!select) {
+          return;
+        }
+
+        select.innerHTML = '';
+        appendPlaceholderOption_(select);
+        (colaboradores || []).forEach(function (colab) {
+          var name = String(colab && colab.name || '').trim();
+          var id = String(colab && colab.id || '').trim();
+          if (!name) {
+            return;
+          }
+          var option = document.createElement('option');
+          option.value = name;
+          option.textContent = id ? name + ' (' + id + ')' : name;
+          select.appendChild(option);
+        });
+      }
+
+      function setSelectValueEnsuringOption_(select, value) {
+        if (!select) {
+          return;
+        }
+
+        var normalized = String(value || '').trim();
+        if (!normalized) {
+          select.value = '';
+          return;
+        }
+
+        var hasValue = Array.prototype.slice.call(select.options || []).some(function (option) {
+          return String(option.value || '') === normalized;
+        });
+
+        if (!hasValue) {
+          var option = document.createElement('option');
+          option.value = normalized;
+          option.textContent = normalized;
+          select.appendChild(option);
+        }
+
+        select.value = normalized;
       }
 
       function loadInspections_() {
@@ -855,16 +959,16 @@
         document.getElementById('editDataServidor').value = toDatetimeLocalValue_(item.dataServidorIso);
         document.getElementById('editOp').value = String(item.op || '');
         document.getElementById('editQtddRevisada').value = Number(item.qtddRevisada) || 0;
-        document.getElementById('editOrigem').value = String(item.origem || '');
+        setSelectValueEnsuringOption_(document.getElementById('editOrigem'), String(item.origem || ''));
         document.getElementById('editCliente').value = String(item.cliente || '');
         document.getElementById('editCriadoPorEmail').value = String(item.criadoPorEmail || '');
         document.getElementById('editRetrabalho').value = item.retrabalho ? 'sim' : 'nao';
 
         var operators = Array.isArray(item.operadores) ? item.operadores : [];
-        document.getElementById('editOperador1').value = operators[0] || '';
-        document.getElementById('editOperador2').value = operators[1] || '';
-        document.getElementById('editOperador3').value = operators[2] || '';
-        document.getElementById('editOperador4').value = operators[3] || '';
+        setSelectValueEnsuringOption_(document.getElementById('editOperador1'), operators[0] || '');
+        setSelectValueEnsuringOption_(document.getElementById('editOperador2'), operators[1] || '');
+        setSelectValueEnsuringOption_(document.getElementById('editOperador3'), operators[2] || '');
+        setSelectValueEnsuringOption_(document.getElementById('editOperador4'), operators[3] || '');
 
         var parsedDefects = parseDefectsPayload_(item.defeitosJsonRaw);
         renderEditDefectRows_(parsedDefects);
@@ -1050,17 +1154,32 @@
         };
 
         setMessage_('Salvando edição da inspeção...', 'info');
+       setEditSavingOverlay_(true);
         google.script.run
           .withSuccessHandler(function () {
+            setEditSavingOverlay_(false);
             closeEditModal_();
             closeDetailsModal_();
             loadInspections_();
             setMessage_('Inspeção atualizada com sucesso.', 'success', true);
           })
           .withFailureHandler(function (error) {
+            setEditSavingOverlay_(false);
             setMessage_('Falha ao editar inspeção: ' + (error.message || error), 'error');
           })
           .updateInspectionControl(payload);
+      }
+
+      function setEditSavingOverlay_(loading) {
+        var overlay = document.getElementById('editSavingOverlay');
+        if (!overlay) {
+          return;
+        }
+        if (loading) {
+          overlay.classList.remove('hidden');
+          return;
+        }
+        overlay.classList.add('hidden');
       }
 
       document.getElementById('addEditDefectBtn').addEventListener('click', function () {
