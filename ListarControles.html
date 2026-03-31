@@ -576,6 +576,9 @@
         document.getElementById('closeInspectionPasswordBtn').addEventListener('click', closeInspectionPasswordModal_);
         document.getElementById('confirmInspectionPasswordBtn').addEventListener('click', confirmInspectionPassword_);
         document.getElementById('editDetailsForm').addEventListener('submit', submitEditDetails_);
+        document.getElementById('editOp').addEventListener('blur', function () {
+          tryAutoFillEditClientByOp_();
+        });
 
         Array.prototype.slice.call(document.querySelectorAll('#inspectionsTable th[data-sort-key]')).forEach(function (header) {
           header.addEventListener('click', function () {
@@ -1062,6 +1065,7 @@
         document.getElementById('editQtddRevisada').value = Number(item.qtddRevisada) || 0;
         setSelectValueEnsuringOption_(document.getElementById('editOrigem'), String(item.origem || ''));
         document.getElementById('editCliente').value = String(item.cliente || '');
+        document.getElementById('editCliente').readOnly = false;
         document.getElementById('editCriadoPorEmail').value = String(item.criadoPorEmail || '');
         document.getElementById('editRetrabalho').value = item.retrabalho ? 'sim' : 'nao';
 
@@ -1073,6 +1077,37 @@
 
         var parsedDefects = parseDefectsPayload_(item.defeitosJsonRaw);
         renderEditDefectRows_(parsedDefects);
+        tryAutoFillEditClientByOp_();
+      }
+
+      function tryAutoFillEditClientByOp_() {
+        var opField = document.getElementById('editOp');
+        var clientField = document.getElementById('editCliente');
+        var normalizedOp = String(opField.value || '').trim();
+
+        if (!/^\d{5}$/.test(normalizedOp)) {
+          clientField.value = '';
+          clientField.readOnly = false;
+          return;
+        }
+
+        if (!window.google || !google.script || !google.script.run) {
+          clientField.value = '';
+          clientField.readOnly = false;
+          return;
+        }
+
+        google.script.run
+          .withSuccessHandler(function (cliente) {
+            var normalizedClient = String(cliente || '').trim();
+            clientField.value = normalizedClient;
+            clientField.readOnly = !!normalizedClient;
+          })
+          .withFailureHandler(function () {
+            clientField.value = '';
+            clientField.readOnly = false;
+          })
+          .getClientByOP(normalizedOp);
       }
 
       function appendPlaceholderOption_(select) {
