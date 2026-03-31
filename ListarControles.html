@@ -656,22 +656,56 @@
         (colaboradores || []).forEach(function (colab) {
           var name = String(colab && colab.name || '').trim();
           var id = String(colab && colab.id || '').trim();
-          if (!name) {
+          if (!name || !id) {
             return;
           }
           var option = document.createElement('option');
-          option.value = name;
-          option.textContent = id ? name + ' (' + id + ')' : name;
+          option.value = id + ' - ' + name;
+          option.textContent = name + ' (' + id + ')';
           select.appendChild(option);
         });
       }
 
-      function setSelectValueEnsuringOption_(select, value) {
+      function normalizeOperatorValueForEditSelect_(rawValue) {
+        var normalized = String(rawValue || '').trim();
+        if (!normalized) {
+          return '';
+        }
+
+        var delimiterIndex = normalized.indexOf(' - ');
+        if (delimiterIndex > -1) {
+          var idPart = normalized.slice(0, delimiterIndex).trim();
+          var namePart = normalized.slice(delimiterIndex + 3).trim();
+          if (idPart && namePart) {
+            return idPart + ' - ' + namePart;
+          }
+        }
+
+        var collaborators = Array.isArray(editCatalogs.colaboradores) ? editCatalogs.colaboradores : [];
+        var byName = collaborators.find(function (colab) {
+          return String(colab && colab.name || '').trim().toLowerCase() === normalized.toLowerCase();
+        });
+
+        if (byName) {
+          var foundId = String(byName.id || '').trim();
+          var foundName = String(byName.name || '').trim();
+          if (foundId && foundName) {
+            return foundId + ' - ' + foundName;
+          }
+        }
+
+        return normalized;
+      }
+
+      function setSelectValueEnsuringOption_(select, value, formatter) {
         if (!select) {
           return;
         }
 
         var normalized = String(value || '').trim();
+        if (typeof formatter === 'function') {
+          normalized = String(formatter(normalized) || '').trim();
+        }
         if (!normalized) {
           select.value = '';
           return;
@@ -965,10 +999,10 @@
         document.getElementById('editRetrabalho').value = item.retrabalho ? 'sim' : 'nao';
 
         var operators = Array.isArray(item.operadores) ? item.operadores : [];
-        setSelectValueEnsuringOption_(document.getElementById('editOperador1'), operators[0] || '');
-        setSelectValueEnsuringOption_(document.getElementById('editOperador2'), operators[1] || '');
-        setSelectValueEnsuringOption_(document.getElementById('editOperador3'), operators[2] || '');
-        setSelectValueEnsuringOption_(document.getElementById('editOperador4'), operators[3] || '');
+        setSelectValueEnsuringOption_(document.getElementById('editOperador1'), operators[0] || '', normalizeOperatorValueForEditSelect_);
+        setSelectValueEnsuringOption_(document.getElementById('editOperador2'), operators[1] || '', normalizeOperatorValueForEditSelect_);
+        setSelectValueEnsuringOption_(document.getElementById('editOperador3'), operators[2] || '', normalizeOperatorValueForEditSelect_);
+        setSelectValueEnsuringOption_(document.getElementById('editOperador4'), operators[3] || '', normalizeOperatorValueForEditSelect_);
 
         var parsedDefects = parseDefectsPayload_(item.defeitosJsonRaw);
         renderEditDefectRows_(parsedDefects);
