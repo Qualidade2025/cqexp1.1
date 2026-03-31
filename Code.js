@@ -48,6 +48,14 @@ function include(filename) {
 }
 
 /**
+ * Configuração temporária de conexão JDBC para SQL Server.
+ * IMPORTANTE: manter apenas provisoriamente; migrar para armazenamento seguro.
+ */
+var DB_URL = 'jdbc:sqlserver://SEU_HOST:1433;databaseName=SUA_BASE;encrypt=true;trustServerCertificate=true';
+var DB_USER = 'SEU_USUARIO';
+var DB_PASS = 'SUA_SENHA';
+
+/**
  * Retorna catálogos para preencher dropdowns no front-end.
  */
 function getCatalogs() {
@@ -145,11 +153,63 @@ function normalizeDefects_(defects) {
 }
 
 /**
- * Stub para integração futura SAP B1 por OP.
+ * Busca cliente por OP diretamente no SQL Server.
+ * @param {number|string} opNumero
+ * @return {{op: string, cliente: string}|null}
+ */
+function buscarClientePorOP(opNumero) {
+  var op = String(opNumero || '').trim();
+  if (!op) {
+    throw new Error('Informe um número de OP válido.');
+  }
+
+  var conn = null;
+  var stmt = null;
+  var rs = null;
+
+  try {
+    conn = Jdbc.getConnection(DB_URL, DB_USER, DB_PASS);
+    stmt = conn.prepareStatement('SELECT TOP 1 belnr_id, kndname FROM beas_fthapt WHERE belnr_id = ?');
+    stmt.setString(1, op);
+
+    rs = stmt.executeQuery();
+    if (rs.next()) {
+      return {
+        op: String(rs.getString('belnr_id') || ''),
+        cliente: String(rs.getString('kndname') || '')
+      };
+    }
+
+    return null;
+  } catch (error) {
+    throw new Error('Erro ao consultar cliente por OP: ' + error.message);
+  } finally {
+    if (rs) {
+      try {
+        rs.close();
+      } catch (closeRsError) {}
+    }
+
+    if (stmt) {
+      try {
+        stmt.close();
+      } catch (closeStmtError) {}
+    }
+
+    if (conn) {
+      try {
+        conn.close();
+      } catch (closeConnError) {}
+    }
+  }
+}
+
+/**
+ * Mantém compatibilidade com o fluxo atual de gravação.
  */
 function getClientByOP(op) {
-  // TODO: integrar com SAP B1 para buscar cliente automaticamente por OP.
-  return '';
+  var found = buscarClientePorOP(op);
+  return found ? found.cliente : '';
 }
 
 
