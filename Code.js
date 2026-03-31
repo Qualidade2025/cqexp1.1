@@ -1,580 +1,305 @@
-var state = {
-  catalogs: {
-    colaboradores: [],
-    posicoes: [],
-    defeitos: [],
-    origens: [],
-    origemObrigatoria: true
-  },
-  selectedOperators: [],
-  messageTimerId: null
-};
-
-var STORAGE_KEY = 'cqexp.selectedOperators';
-var STORAGE_DATE_KEY = 'cqexp.selectedOperatorsDate';
-var OPERATOR_SLOTS = [1, 2, 3, 4];
-
-document.addEventListener('DOMContentLoaded', function () {
-  if (typeof window.initThemeToggle_ === 'function') {
-    window.initThemeToggle_();
-  }
-  bindActions_();
-  loadCatalogs_();
-});
-
-function bindActions_() {
-  document.getElementById('listRncsBtn').addEventListener('click', function () {
-    showInlineStatus_('listRncsStatus', 'Carregando...');
-    openAppPage_('listar-rncs');
-  });
-
-  document.getElementById('addDefectBtn').addEventListener('click', function () {
-    addDefectRow_();
-  });
-
-  document.getElementById('buscarClienteBtn').addEventListener('click', function () {
-    buscarClientePorOP_();
-  });
-
-  document.getElementById('op').addEventListener('keydown', function (event) {
-    if (event.key === 'Enter') {
-      event.preventDefault();
-      buscarClientePorOP_();
-    }
-  });
-
-  document.getElementById('saveBtn').addEventListener('click', function () {
-    saveInspection_();
-  });
-
-  document.getElementById('clearBtn').addEventListener('click', function () {
-    resetForm_();
-    setMessage_('Formulário limpo.', 'success', true);
-  });
-
-  document.getElementById('editOperatorsBtn').addEventListener('click', function () {
-    openOperatorModal_(false);
-  });
-
-  document.getElementById('editCollaboratorsBtn').addEventListener('click', function () {
-    openPasswordModal_();
-  });
-
-  document.getElementById('confirmOperatorsBtn').addEventListener('click', function () {
-    confirmOperatorSelection_();
-  });
-
-  document.getElementById('closeOperatorsBtn').addEventListener('click', function () {
-    closeOperatorModal_();
-  });
-
-  document.getElementById('confirmPasswordBtn').addEventListener('click', function () {
-    confirmCollaboratorsPassword_();
-  });
-
-  document.getElementById('closePasswordBtn').addEventListener('click', function () {
-    closePasswordModal_();
-  });
-}
-
-function loadCatalogs_() {
-  setStartupLoading_(true);
-
-  google.script.run
-    .withSuccessHandler(function (catalogs) {
-      state.catalogs = catalogs || {};
-      state.catalogs.colaboradores = state.catalogs.colaboradores || [];
-      state.catalogs.posicoes = state.catalogs.posicoes || [];
-      state.catalogs.defeitos = state.catalogs.defeitos || [];
-      state.catalogs.defeitosPorPosicao = state.catalogs.defeitosPorPosicao || {};
-      state.catalogs.origens = state.catalogs.origens || [];
-      state.catalogs.origemObrigatoria = !!state.catalogs.origemObrigatoria;
-
-      renderOperatorSelectors_();
-      renderOrigens_();
-      clearDefectRows_();
-      addDefectRow_();
-      loadStoredOperators_();
-      renderSelectedOperators_();
-      setStartupLoading_(false);
-    })
-    .withFailureHandler(function (error) {
-      setStartupLoading_(false);
-      setMessage_('Falha ao carregar catálogos: ' + (error.message || error), 'error');
-    })
-    .getCatalogs();
-}
-
-function loadStoredOperators_() {
+/**
+ * Renderiza UI web do MVP.
+ */
+function doGet(e) {
+  var page = '';
   try {
-    var today = new Date().toISOString().slice(0, 10);
-    var storedDate = window.localStorage.getItem(STORAGE_DATE_KEY);
-    if (storedDate !== today) {
-      state.selectedOperators = [];
-      window.localStorage.removeItem(STORAGE_KEY);
-      window.localStorage.removeItem(STORAGE_DATE_KEY);
-      return;
-    }
-
-    var raw = window.localStorage.getItem(STORAGE_KEY);
-    if (!raw) {
-      return;
-    }
-
-    var parsed = JSON.parse(raw);
-    if (!Array.isArray(parsed)) {
-      return;
-    }
-
-    state.selectedOperators = parsed.filter(function (item) {
-      return item && item.id && item.name;
-    });
+    page = String((e && e.parameter && e.parameter.page) || '').trim();
   } catch (error) {
-    state.selectedOperators = [];
+    page = '';
+  }
+
+  var templateName = getTemplateNameByPage_(page);
+  var template = HtmlService.createTemplateFromFile(templateName);
+  template.appBaseUrl = getAppBaseUrl_();
+
+  return template.evaluate()
+    .setTitle('Controle de Qualidade - BALDI')
+    .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL);
+}
+
+function getAppBaseUrl_() {
+  try {
+    return ScriptApp.getService().getUrl() || '';
+  } catch (error) {
+    return '';
   }
 }
 
-function persistOperators_() {
-  window.localStorage.setItem(STORAGE_KEY, JSON.stringify(state.selectedOperators));
-  window.localStorage.setItem(STORAGE_DATE_KEY, new Date().toISOString().slice(0, 10));
-}
-
-function renderOperatorSelectors_() {
-  var container = document.getElementById('operatorSelectors');
-  container.innerHTML = '';
-
-  OPERATOR_SLOTS.forEach(function (i) {
-    var wrapper = document.createElement('label');
-    wrapper.className = 'operator-slot';
-    wrapper.textContent = 'Operador ' + i;
-
-    var select = document.createElement('select');
-    select.id = 'operador' + i;
-    appendPlaceholderOption_(select);
-
-    state.catalogs.colaboradores.forEach(function (colab) {
-      var option = document.createElement('option');
-      option.value = colab.id;
-      option.textContent = colab.name + ' (' + colab.id + ')';
-      option.dataset.name = colab.name;
-      select.appendChild(option);
-    });
-
-    wrapper.appendChild(select);
-    container.appendChild(wrapper);
-  });
-}
-
-function openOperatorModal_(required) {
-  fillOperatorSelectors_(state.selectedOperators);
-  document.getElementById('operatorModalError').textContent = '';
-  document.getElementById('operatorModal').classList.remove('hidden');
-  document.getElementById('closeOperatorsBtn').style.display = required ? 'none' : '';
-}
-
-function closeOperatorModal_() {
-  document.getElementById('operatorModal').classList.add('hidden');
-  document.getElementById('operatorModalError').textContent = '';
-}
-
-
-function showInlineStatus_(elementId, text) {
-  var target = document.getElementById(elementId);
-  if (!target) {
-    return;
+function getTemplateNameByPage_(page) {
+  if (page === 'index' || page === 'home' || page === 'inicio') {
+    return 'Index';
   }
 
-  target.textContent = text || '';
-}
-
-function openAppPage_(page) {
-  window.location.href = buildAppUrl_(page);
-}
-
-function buildAppUrl_(page) {
-  var baseUrl = String(window.APP_BASE_URL || '').trim();
-
-  if (!baseUrl) {
-    var currentUrl = window.location.href;
-    if (currentUrl.indexOf('?') === -1) {
-      return currentUrl + '?page=' + encodeURIComponent(page);
-    }
-    if (/[?&]page=/.test(currentUrl)) {
-      return currentUrl.replace(/([?&])page=[^&]*/g, '$1page=' + encodeURIComponent(page));
-    }
-    return currentUrl + '&page=' + encodeURIComponent(page);
+  if (page === 'listar-rncs' || page === 'listarcontroles' || page === 'listar-controles') {
+    return 'ListarControles';
   }
 
-  return baseUrl + '?page=' + encodeURIComponent(page);
-}
-
-function openPasswordModal_() {
-  closeOperatorModal_();
-  document.getElementById('passwordModalError').textContent = '';
-  var passwordInput = document.getElementById('collaboratorsPassword');
-  passwordInput.value = '';
-  document.getElementById('passwordModal').classList.remove('hidden');
-  passwordInput.focus();
-}
-
-function closePasswordModal_() {
-  document.getElementById('passwordModal').classList.add('hidden');
-  document.getElementById('passwordModalError').textContent = '';
-}
-
-function confirmCollaboratorsPassword_() {
-  var password = document.getElementById('collaboratorsPassword').value;
-  var errorBox = document.getElementById('passwordModalError');
-  var confirmBtn = document.getElementById('confirmPasswordBtn');
-  errorBox.textContent = '';
-  confirmBtn.disabled = true;
-  errorBox.className = 'message info modal-inline-message';
-  errorBox.textContent = 'Abrindo...';
-
-  google.script.run
-    .withSuccessHandler(function () {
-      confirmBtn.disabled = false;
-      closePasswordModal_();
-      openAppPage_('editar-colaboradores');
-    })
-    .withFailureHandler(function (error) {
-      confirmBtn.disabled = false;
-      errorBox.className = 'message error modal-inline-message';
-      errorBox.textContent = error.message || String(error);
-    })
-    .validateCollaboratorsPassword(password);
-}
-
-function fillOperatorSelectors_(operators) {
-  OPERATOR_SLOTS.forEach(function (i) {
-    var select = document.getElementById('operador' + i);
-    if (select) {
-      select.value = '';
-    }
-  });
-
-  operators.forEach(function (op, index) {
-    if (index > 3) {
-      return;
-    }
-
-    var select = document.getElementById('operador' + (index + 1));
-    if (select) {
-      select.value = op.id;
-    }
-  });
-}
-
-function getModalOperators_() {
-  var selectedMap = {};
-
-  OPERATOR_SLOTS.forEach(function (i) {
-    var select = document.getElementById('operador' + i);
-    if (!select || !select.value) {
-      return;
-    }
-
-    var id = String(select.value).trim();
-    var option = select.options[select.selectedIndex];
-    var name = option && option.dataset ? String(option.dataset.name || '').trim() : '';
-
-    if (!selectedMap[id]) {
-      selectedMap[id] = {
-        id: id,
-        name: name
-      };
-    }
-  });
-
-  return Object.keys(selectedMap).map(function (id) {
-    return selectedMap[id];
-  });
-}
-
-function confirmOperatorSelection_() {
-  var operators = getModalOperators_();
-
-  if (!operators.length) {
-    document.getElementById('operatorModalError').textContent = 'Selecione ao menos 1 operador para continuar.';
-    return;
+  if (page === 'editar-colaboradores') {
+    return 'EditarColaboradores';
   }
 
-  state.selectedOperators = operators;
-  persistOperators_();
-  renderSelectedOperators_();
-  closeOperatorModal_();
+  return 'Index';
 }
 
-function renderSelectedOperators_() {
-  var target = document.getElementById('selectedOperators');
 
-  if (!state.selectedOperators.length) {
-    target.textContent = 'Nenhum operador selecionado.';
-    return;
-  }
-
-  target.textContent = state.selectedOperators.map(function (item) {
-    return item.name + ' (' + item.id + ')';
-  }).join(' • ');
+function include(filename) {
+  return HtmlService.createHtmlOutputFromFile(filename).getContent();
 }
 
-function renderOrigens_() {
-  var select = document.getElementById('origem');
-  var label = document.getElementById('origemLabel');
-  select.innerHTML = '';
-  appendPlaceholderOption_(select);
+/**
+ * Configuração temporária de conexão JDBC para SQL Server.
+ * IMPORTANTE: manter apenas provisoriamente; migrar para armazenamento seguro.
+ */
+var DB_URL = 'jdbc:sqlserver://SEU_HOST:1433;databaseName=SUA_BASE;encrypt=true;trustServerCertificate=true';
+var DB_USER = 'SEU_USUARIO';
+var DB_PASS = 'SUA_SENHA';
 
-  select.required = !!state.catalogs.origemObrigatoria;
-  label.textContent = state.catalogs.origemObrigatoria ? 'Origem *' : 'Origem';
-
-  state.catalogs.origens.forEach(function (origem) {
-    var option = document.createElement('option');
-    option.value = origem;
-    option.textContent = origem;
-    select.appendChild(option);
-  });
-
-  if (!state.catalogs.origens.length) {
-    setMessage_('Nenhuma origem ativa encontrada em cad_origens.', 'error');
-  }
-}
-
-function clearDefectRows_() {
-  document.getElementById('defectRows').innerHTML = '';
-}
-
-function addDefectRow_() {
-  var tbody = document.getElementById('defectRows');
-  var tr = document.createElement('tr');
-
-  var tdPos = document.createElement('td');
-  var selectPos = document.createElement('select');
-  selectPos.className = 'posicao';
-  appendPlaceholderOption_(selectPos);
-  state.catalogs.posicoes.forEach(function (pos) {
-    var opt = document.createElement('option');
-    opt.value = pos;
-    opt.textContent = pos;
-    selectPos.appendChild(opt);
-  });
-  tdPos.appendChild(selectPos);
-
-  var tdDef = document.createElement('td');
-  var selectDef = document.createElement('select');
-  selectDef.className = 'defeito';
-  renderDefectsForPosition_(selectDef, '');
-  selectPos.addEventListener('change', function () {
-    renderDefectsForPosition_(selectDef, selectPos.value);
-  });
-  tdDef.appendChild(selectDef);
-
-  var tdQtd = document.createElement('td');
-  var inputQtd = document.createElement('input');
-  inputQtd.type = 'number';
-  inputQtd.className = 'quantidade';
-  inputQtd.min = '1';
-  inputQtd.step = '1';
-  inputQtd.addEventListener('keydown', function (event) {
-    if (event.key === 'Enter') {
-      event.preventDefault();
-      addDefectRow_();
-      focusLastQuantidade_();
-    }
-  });
-  tdQtd.appendChild(inputQtd);
-
-  var tdAction = document.createElement('td');
-  var removeBtn = document.createElement('button');
-  removeBtn.type = 'button';
-  removeBtn.className = 'row-remove';
-  removeBtn.textContent = 'Remover';
-  removeBtn.addEventListener('click', function () {
-    tr.remove();
-    if (!document.querySelectorAll('#defectRows tr').length) {
-      addDefectRow_();
-    }
-  });
-  tdAction.appendChild(removeBtn);
-
-  tr.appendChild(tdPos);
-  tr.appendChild(tdDef);
-  tr.appendChild(tdQtd);
-  tr.appendChild(tdAction);
-  tbody.appendChild(tr);
-}
-
-function renderDefectsForPosition_(selectDef, posicao) {
-  var previousDefect = selectDef.value;
-  var defectMap = state.catalogs.defeitosPorPosicao || {};
-  var filteredDefects = defectMap[posicao] || [];
-
-  selectDef.innerHTML = '';
-  appendPlaceholderOption_(selectDef);
-
-  filteredDefects.forEach(function (def) {
-    var option = document.createElement('option');
-    option.value = def;
-    option.textContent = def;
-    selectDef.appendChild(option);
-  });
-
-  selectDef.disabled = !posicao;
-
-  if (previousDefect && filteredDefects.indexOf(previousDefect) !== -1) {
-    selectDef.value = previousDefect;
-  } else {
-    selectDef.value = '';
-  }
-}
-
-function focusLastQuantidade_() {
-  var fields = document.querySelectorAll('#defectRows .quantidade');
-  if (!fields.length) {
-    return;
-  }
-  fields[fields.length - 1].focus();
-}
-
-function buildPayload_() {
-  var defects = Array.prototype.slice.call(document.querySelectorAll('#defectRows tr')).map(function (tr) {
-    var quantidadeField = tr.querySelector('.quantidade');
-    return {
-      posicao: tr.querySelector('.posicao').value,
-      defeito: tr.querySelector('.defeito').value,
-      quantidade: quantidadeField ? String(quantidadeField.value || '').trim() : ''
-    };
-  });
+/**
+ * Retorna catálogos para preencher dropdowns no front-end.
+ */
+function getCatalogs() {
+  var defectCatalog = getDefectsByPositionCatalog_();
 
   return {
-    op: document.getElementById('op').value.trim(),
-    qtddRevisada: Number(document.getElementById('qtddRevisada').value),
-    origem: document.getElementById('origem').value,
-    clienteManual: document.getElementById('clienteManual').value.trim(),
-    retrabalho: document.getElementById('retrabalho').checked,
-    operadores: state.selectedOperators,
-    defeitos: defects
+    colaboradores: getActiveCollaborators_(),
+    posicoes: defectCatalog.posicoes,
+    defeitos: defectCatalog.defeitos,
+    defeitosPorPosicao: defectCatalog.defeitosPorPosicao,
+    origens: getActiveCatalogValues_(SHEETS.CAD_ORIGENS, 1, 2),
+    origemObrigatoria: isOriginRequired_()
   };
 }
 
-function saveInspection_() {
-  var payload = buildPayload_();
+/**
+ * Grava inspeção em linha única na aba inspecoes com lock para concorrência.
+ */
+function saveInspection(payload) {
+  validateInspectionPayload_(payload);
 
-  setLoading_(true);
-  setMessage_('Salvando...', 'info');
+  var lock = LockService.getDocumentLock();
+  lock.waitLock(30000);
 
-  google.script.run
-    .withSuccessHandler(function (response) {
-      setLoading_(false);
-      resetForm_();
-      setMessage_('Inspeção salva com sucesso! ID: ' + response.idInspecao, 'success', true);
-    })
-    .withFailureHandler(function (error) {
-      setLoading_(false);
-      setMessage_(error.message || String(error), 'error');
-    })
-    .saveInspection(payload);
+  try {
+    var idInspecao = getNextInspectionId_();
+    var serverNow = new Date();
+    var client = payload.clienteManual || getClientByOP(payload.op) || '';
+    var userEmail = Session.getActiveUser().getEmail() || '';
+    var operators = normalizeOperators_(payload.operadores);
+    var defects = normalizeDefects_(normalizePayloadDefects_(payload.defeitos).items);
+
+    appendRowsBatch_(SHEETS.INSPECOES, [[
+      idInspecao,
+      serverNow,
+      String(payload.op).trim(),
+      Number(payload.qtddRevisada),
+      payload.origem ? String(payload.origem).trim() : '',
+      String(client).trim(),
+      userEmail,
+      operators[0] || '',
+      operators[1] || '',
+      operators[2] || '',
+      operators[3] || '',
+      defects.length,
+      JSON.stringify(defects),
+      defects.map(function (item) {
+        return item.posicao + ' / ' + item.defeito + ' / ' + item.quantidade;
+      }).join(' | '),
+      payload.retrabalho ? 'X' : ''
+    ]]);
+
+    return {
+      ok: true,
+      idInspecao: idInspecao,
+      serverNow: serverNow
+    };
+  } finally {
+    lock.releaseLock();
+  }
 }
 
-function buscarClientePorOP_() {
-  var op = document.getElementById('op').value.trim();
-  var clienteField = document.getElementById('clienteManual');
-  var buscarBtn = document.getElementById('buscarClienteBtn');
+function getNextInspectionId_() {
+  var sheet = getRequiredSheet_(SHEETS.INSPECOES);
+  var lastRow = sheet.getLastRow();
+  if (lastRow < 2) {
+    return 1;
+  }
 
+  var lastValue = sheet.getRange(lastRow, 1).getValue();
+  var parsedValue = Number(lastValue);
+
+  if (!isFinite(parsedValue) || parsedValue < 1) {
+    return 1;
+  }
+
+  return Math.floor(parsedValue) + 1;
+}
+
+function normalizeOperators_(operators) {
+  return operators.map(function (op) {
+    return [String(op.id).trim(), String(op.name).trim()].join(' - ');
+  });
+}
+
+function normalizeDefects_(defects) {
+  return defects.map(function (item, index) {
+    return {
+      linha: index + 1,
+      posicao: String(item.posicao).trim(),
+      defeito: String(item.defeito).trim(),
+      quantidade: Number(item.quantidade)
+    };
+  });
+}
+
+/**
+ * Busca cliente por OP diretamente no SQL Server.
+ * @param {number|string} opNumero
+ * @return {{op: string, cliente: string}|null}
+ */
+function buscarClientePorOP(opNumero) {
+  var op = String(opNumero || '').trim();
   if (!op) {
-    clienteField.value = '';
-    setMessage_('Informe uma OP para buscar o cliente.', 'error');
-    return;
+    throw new Error('Informe um número de OP válido.');
   }
 
-  buscarBtn.disabled = true;
-  setMessage_('Buscando cliente...', 'info');
+  var conn = null;
+  var stmt = null;
+  var rs = null;
 
-  google.script.run
-    .withSuccessHandler(function (result) {
-      buscarBtn.disabled = false;
+  var etapa = 'validacao';
 
-      if (!result) {
-        clienteField.value = '';
-        setMessage_('OP não encontrada.', 'error');
-        return;
+  try {
+    etapa = 'conexao_jdbc';
+    conn = Jdbc.getConnection(DB_URL, DB_USER, DB_PASS);
+
+    etapa = 'preparo_sql';
+    stmt = conn.prepareStatement('SELECT TOP 1 belnr_id, kndname FROM beas_fthapt WHERE belnr_id = ?');
+    stmt.setString(1, op);
+
+    etapa = 'execucao_consulta';
+    rs = stmt.executeQuery();
+
+    etapa = 'leitura_resultado';
+    if (rs.next()) {
+      var result = {
+        op: String(rs.getString('belnr_id') || ''),
+        cliente: String(rs.getString('kndname') || '')
+      };
+      Logger.log('[buscarClientePorOP] OP %s encontrada na etapa %s.', op, etapa);
+      return result;
+    }
+
+    Logger.log('[buscarClientePorOP] OP %s não encontrada.', op);
+    return null;
+  } catch (error) {
+    Logger.log('[buscarClientePorOP] Falha na etapa %s para OP %s. Detalhes: %s', etapa, op, error && error.message ? error.message : error);
+    throw new Error('Erro ao consultar cliente por OP na etapa "' + etapa + '": ' + (error && error.message ? error.message : error));
+  } finally {
+    if (rs) {
+      try {
+        rs.close();
+      } catch (closeRsError) {
+        Logger.log('[buscarClientePorOP] Falha ao fechar ResultSet: %s', closeRsError && closeRsError.message ? closeRsError.message : closeRsError);
       }
+    }
 
-      clienteField.value = result.cliente || '';
-      setMessage_('Cliente carregado automaticamente para OP ' + result.op + '.', 'success', true);
-    })
-    .withFailureHandler(function (error) {
-      buscarBtn.disabled = false;
-      clienteField.value = '';
+    if (stmt) {
+      try {
+        stmt.close();
+      } catch (closeStmtError) {
+        Logger.log('[buscarClientePorOP] Falha ao fechar Statement: %s', closeStmtError && closeStmtError.message ? closeStmtError.message : closeStmtError);
+      }
+    }
 
-      var detailedMessage = error && error.message ? error.message : String(error || 'Erro desconhecido');
-      console.error('[buscarClientePorOP_] Falha na busca da OP', {
-        op: op,
-        erro: detailedMessage
-      });
-      setMessage_('Falha ao consultar cliente: ' + detailedMessage, 'error');
-    })
-    .buscarClientePorOP(op);
-}
-
-function resetForm_() {
-  document.getElementById('op').value = '';
-  document.getElementById('qtddRevisada').value = '';
-  document.getElementById('origem').value = '';
-  document.getElementById('clienteManual').value = '';
-  document.getElementById('retrabalho').checked = false;
-
-  clearDefectRows_();
-  addDefectRow_();
-  setMessage_('', '');
-}
-
-function setLoading_(loading) {
-  document.getElementById('saveBtn').disabled = loading;
-  document.getElementById('clearBtn').disabled = loading;
-  document.getElementById('addDefectBtn').disabled = loading;
-  document.getElementById('editOperatorsBtn').disabled = loading;
-}
-
-function setMessage_(text, type, autoClear) {
-  var box = document.getElementById('messageBox');
-
-  if (state.messageTimerId) {
-    clearTimeout(state.messageTimerId);
-    state.messageTimerId = null;
-  }
-
-  box.textContent = text || '';
-  box.className = 'message';
-  if (type) {
-    box.classList.add(type);
-  }
-
-  if (autoClear) {
-    state.messageTimerId = window.setTimeout(function () {
-      box.textContent = '';
-      box.className = 'message';
-      state.messageTimerId = null;
-    }, 4000);
+    if (conn) {
+      try {
+        conn.close();
+      } catch (closeConnError) {
+        Logger.log('[buscarClientePorOP] Falha ao fechar Connection: %s', closeConnError && closeConnError.message ? closeConnError.message : closeConnError);
+      }
+    }
   }
 }
 
-function appendPlaceholderOption_(select) {
-  var option = document.createElement('option');
-  option.value = '';
-  option.textContent = 'Selecione...';
-  select.appendChild(option);
+/**
+ * Mantém compatibilidade com o fluxo atual de gravação.
+ */
+function getClientByOP(op) {
+  var found = buscarClientePorOP(op);
+  return found ? found.cliente : '';
 }
 
-function setStartupLoading_(loading) {
-  var loadingBox = document.getElementById('startupLoading');
-  if (!loadingBox) {
-    return;
+
+function healthcheck() {
+  return {
+    ok: true,
+    timestamp: new Date(),
+    spreadsheetId: SpreadsheetApp.getActiveSpreadsheet().getId()
+  };
+}
+
+function validateCollaboratorsPassword(password) {
+  var enteredPassword = String(password || '').trim();
+  if (!enteredPassword) {
+    throw new Error('Informe a senha.');
   }
 
-  if (loading) {
-    loadingBox.classList.remove('hidden');
-    return;
+  var expectedPassword = getCollaboratorsEditPassword_();
+  if (!expectedPassword) {
+    throw new Error('Senha de edição não configurada em colaboradores!E2.');
   }
 
-  loadingBox.classList.add('hidden');
+  if (enteredPassword !== expectedPassword) {
+    throw new Error('Senha inválida.');
+  }
+
+  return {
+    ok: true
+  };
+}
+
+function listCollaboratorsControls() {
+  return getCollaboratorsForControlList_();
+}
+
+function saveCollaboratorsControls(rows) {
+  if (!Array.isArray(rows) || !rows.length) {
+    throw new Error('Adicione ao menos um colaborador.');
+  }
+
+  var normalized = [];
+  var ids = {};
+
+  rows.forEach(function (row, index) {
+    var id = row && row.id ? String(row.id).trim() : '';
+    var name = row && row.name ? String(row.name).trim() : '';
+    var active = !!(row && row.active);
+
+    if (!id) {
+      throw new Error('Linha ' + (index + 1) + ': informe o ID.');
+    }
+
+    if (!name) {
+      throw new Error('Linha ' + (index + 1) + ': informe o nome.');
+    }
+
+    if (ids[id]) {
+      throw new Error('ID duplicado: ' + id + '.');
+    }
+    ids[id] = true;
+
+    normalized.push([id, name, active]);
+  });
+
+  saveCollaboratorsControlList_(normalized);
+  return { ok: true };
+}
+
+function listInspectionsControls(params) {
+  return listInspectionsControls_(params);
+}
+
+function updateInspectionControl(payload) {
+  return updateInspectionControl_(payload);
 }
