@@ -14,6 +14,7 @@ var state = {
 var STORAGE_KEY = 'cqexp.selectedOperators';
 var STORAGE_DATE_KEY = 'cqexp.selectedOperatorsDate';
 var OPERATOR_SLOTS = [1, 2, 3, 4];
+var OP_EMPTY_LABEL = 'Sem OP';
 
 document.addEventListener('DOMContentLoaded', function () {
   if (typeof window.initThemeToggle_ === 'function') {
@@ -439,6 +440,11 @@ function focusLastQuantidade_() {
 }
 
 function buildPayload_() {
+  var opValue = String(document.getElementById('op').value || '').trim();
+  if (state.opLocked || opValue === OP_EMPTY_LABEL) {
+    opValue = '';
+  }
+
   var defects = Array.prototype.slice.call(document.querySelectorAll('#defectRows tr')).map(function (tr) {
     var quantidadeField = tr.querySelector('.quantidade');
     return {
@@ -449,7 +455,7 @@ function buildPayload_() {
   });
 
   return {
-    op: document.getElementById('op').value.trim(),
+    op: opValue,
     opLocked: state.opLocked,
     qtddRevisada: Number(document.getElementById('qtddRevisada').value),
     origem: document.getElementById('origem').value,
@@ -461,6 +467,9 @@ function buildPayload_() {
 }
 
 function sanitizeOpInput_() {
+  if (state.opLocked) {
+    return;
+  }
   var opField = document.getElementById('op');
   opField.value = String(opField.value || '').replace(/\D/g, '');
 }
@@ -477,7 +486,7 @@ function applyOpLockState_(locked) {
 
   state.opLocked = !!locked;
   opField.readOnly = state.opLocked;
-  opField.value = state.opLocked ? '' : opField.value;
+  opField.value = state.opLocked ? OP_EMPTY_LABEL : '';
 
   clientField.required = state.opLocked;
   clientField.readOnly = false;
@@ -486,6 +495,10 @@ function applyOpLockState_(locked) {
 }
 
 function tryAutoFillClientByOp_() {
+  if (state.opLocked) {
+    return;
+  }
+
   var opField = document.getElementById('op');
   var clientField = document.getElementById('clienteManual');
   var normalizedOp = String(opField.value || '').trim();
