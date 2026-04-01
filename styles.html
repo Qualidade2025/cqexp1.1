@@ -141,6 +141,35 @@
     color: var(--text);
   }
 
+  .op-input-wrap {
+    position: relative;
+  }
+
+  .op-input-wrap #op {
+    padding-right: 36px;
+  }
+
+  .op-lock-btn {
+    position: absolute;
+    right: 6px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 24px;
+    height: 24px;
+    border-radius: 999px;
+    padding: 0;
+    font-size: 12px;
+    line-height: 1;
+    background: var(--surface-soft);
+    color: var(--text);
+    border-color: var(--border-strong);
+  }
+
+  .op-lock-btn.locked {
+    color: var(--danger);
+    border-color: var(--danger);
+  }
+
   button {
     cursor: pointer;
     background: var(--primary);
