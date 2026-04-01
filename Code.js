@@ -111,20 +111,18 @@ function saveInspection(payload) {
 }
 
 function getNextInspectionId_() {
-  var sheet = getRequiredSheet_(SHEETS.INSPECOES);
-  var lastRow = sheet.getLastRow();
-  if (lastRow < 2) {
-    return 1;
-  }
+  var collaboratorsSheet = getRequiredSheet_(SHEETS.COLABORADORES);
+  var counterCell = collaboratorsSheet.getRange('L2');
+  var rawCounter = counterCell.getValue();
+  var parsedCounter = Number(rawCounter);
+  var currentCounter = isFinite(parsedCounter) && parsedCounter >= 0
+    ? Math.floor(parsedCounter)
+    : 0;
 
-  var lastValue = sheet.getRange(lastRow, 1).getValue();
-  var parsedValue = Number(lastValue);
+  var nextId = currentCounter + 1;
+  counterCell.setValue(nextId);
 
-  if (!isFinite(parsedValue) || parsedValue < 1) {
-    return 1;
-  }
-
-  return Math.floor(parsedValue) + 1;
+  return nextId;
 }
 
 function normalizeOperators_(operators) {
