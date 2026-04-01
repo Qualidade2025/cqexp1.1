@@ -40,7 +40,10 @@
         <section class="form-grid">
           <label>
             OP *
-            <input id="op" type="text" maxlength="50" placeholder="Ex.: OP12345" />
+            <div class="op-input-wrap">
+              <input id="op" type="text" maxlength="50" inputmode="numeric" pattern="[0-9]*" placeholder="Ex.: 12345" />
+              <button id="opLockBtn" class="op-lock-btn" type="button" aria-label="Travar campo OP">✕</button>
+            </div>
           </label>
 
           <label>
@@ -54,7 +57,7 @@
           </label>
 
           <label>
-            Cliente
+            <span id="clienteLabel">Cliente</span>
             <input id="clienteManual" type="text" maxlength="120" placeholder="Ex.: Cliente XYZ" />
           </label>
 
