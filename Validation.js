@@ -6,8 +6,21 @@ function validateInspectionPayload_(payload) {
     throw new Error('Payload inválido.');
   }
 
-  if (!payload.op || !String(payload.op).trim()) {
-    throw new Error('OP é obrigatória.');
+  var op = String(payload.op || '').trim();
+  var opLocked = !!payload.opLocked;
+
+  if (opLocked) {
+    if (!payload.clienteManual || !String(payload.clienteManual).trim()) {
+      throw new Error('Cliente é obrigatório quando o campo OP está travado.');
+    }
+  } else {
+    if (!op) {
+      throw new Error('OP é obrigatória.');
+    }
+
+    if (!/^\d+$/.test(op)) {
+      throw new Error('OP deve conter apenas dígitos numéricos.');
+    }
   }
 
   var qtd = Number(payload.qtddRevisada);
