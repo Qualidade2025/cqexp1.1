@@ -7,6 +7,9 @@ function validateInspectionPayload_(payload) {
   }
 
   var op = String(payload.op || '').trim();
+  if (op.toLowerCase() === 'sem op') {
+    op = '';
+  }
   var opLocked = !!payload.opLocked;
 
   if (opLocked) {
