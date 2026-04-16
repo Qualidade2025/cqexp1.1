@@ -699,6 +699,7 @@
 
         select.innerHTML = '';
         appendPlaceholderOption_(select);
+        bindSelectPlaceholderStyle_(select);
         (values || []).forEach(function (entry) {
           var normalized = String(entry || '').trim();
           if (!normalized) {
@@ -718,6 +719,7 @@
 
         select.innerHTML = '';
         appendPlaceholderOption_(select);
+        bindSelectPlaceholderStyle_(select);
         (colaboradores || []).forEach(function (colab) {
           var name = String(colab && colab.name || '').trim();
           var id = String(colab && colab.id || '').trim();
@@ -773,6 +775,7 @@
         }
         if (!normalized) {
           select.value = '';
+          updateSelectPlaceholderStyle_(select);
           return;
         }
 
@@ -788,6 +791,7 @@
         }
 
         select.value = normalized;
+        updateSelectPlaceholderStyle_(select);
       }
 
       function loadInspections_() {
@@ -1179,6 +1183,30 @@
         option.value = '';
         option.textContent = 'Selecione...';
         select.appendChild(option);
+        updateSelectPlaceholderStyle_(select);
+      }
+
+      function bindSelectPlaceholderStyle_(select) {
+        if (!select || select.dataset.placeholderHandlerBound === '1') {
+          return;
+        }
+        select.addEventListener('change', function () {
+          updateSelectPlaceholderStyle_(select);
+        });
+        select.dataset.placeholderHandlerBound = '1';
+      }
+
+      function updateSelectPlaceholderStyle_(select) {
+        if (!select) {
+          return;
+        }
+
+        if (String(select.value || '').trim()) {
+          select.classList.remove('placeholder-selected');
+          return;
+        }
+
+        select.classList.add('placeholder-selected');
       }
 
       function renderEditDefectsForPosition_(selectDef, posicao) {
@@ -1198,7 +1226,10 @@
         selectDef.disabled = !posicao;
         if (previousDefect && defects.indexOf(previousDefect) !== -1) {
           selectDef.value = previousDefect;
+        } else {
+          selectDef.value = '';
         }
+        updateSelectPlaceholderStyle_(selectDef);
       }
 
       function addEditDefectRow_(item) {
@@ -1209,6 +1240,7 @@
         var selectPos = document.createElement('select');
         selectPos.className = 'posicao';
         appendPlaceholderOption_(selectPos);
+        bindSelectPlaceholderStyle_(selectPos);
         (editCatalogs.posicoes || []).forEach(function (posicao) {
           var opt = document.createElement('option');
           opt.value = posicao;
@@ -1220,6 +1252,7 @@
         var tdDef = document.createElement('td');
         var selectDef = document.createElement('select');
         selectDef.className = 'defeito';
+        bindSelectPlaceholderStyle_(selectDef);
         tdDef.appendChild(selectDef);
 
         var tdQtd = document.createElement('td');
@@ -1255,9 +1288,11 @@
 
         renderEditDefectsForPosition_(selectDef, item && item.posicao ? String(item.posicao) : '');
         selectPos.value = item && item.posicao ? String(item.posicao) : '';
+        updateSelectPlaceholderStyle_(selectPos);
         if (item && item.defeito) {
           selectDef.value = String(item.defeito);
         }
+        updateSelectPlaceholderStyle_(selectDef);
         inputQtd.value = item && item.quantidade ? Number(item.quantidade) : '';
       }
 
