@@ -1417,7 +1417,9 @@
         }
         clientField.readOnly = isEditClientAutoOnlyMode_();
 
-        if (!preserveClient && !editState.opLocked) {
+        if (!preserveClient && editState.opLocked) {
+          clientField.value = '';
+        } else if (!preserveClient && !editState.opLocked) {
           clientField.value = '';
         }
         clearEditOpLookupState_();
@@ -1525,7 +1527,7 @@
       }
 
       function isEditClientAutoOnlyMode_() {
-        return !!(editCatalogs.opObrigatoria && !editState.opLocked);
+        return !editState.opLocked;
       }
 
       function showInlineStatus_(elementId, text) {
