@@ -17,17 +17,22 @@ function validateInspectionPayload_(payload) {
     if (opIsRequired) {
       throw new Error('OP é obrigatória.');
     }
-    if (!payload.clienteManual || !String(payload.clienteManual).trim()) {
-      throw new Error('Cliente é obrigatório quando o campo OP está travado.');
-    }
   } else {
-    if (!op) {
+    if (!op && opIsRequired) {
       throw new Error('OP é obrigatória.');
     }
 
-    if (!/^\d+$/.test(op)) {
+    if (op && !/^\d+$/.test(op)) {
       throw new Error('OP deve conter apenas dígitos numéricos.');
     }
+
+    if (op && !getClientByOP(op)) {
+      throw new Error('OP ' + op + ' não foi encontrada na aba op_cliente.');
+    }
+  }
+
+  if (!payload.clienteManual || !String(payload.clienteManual).trim()) {
+    throw new Error('Cliente é obrigatório.');
   }
 
   var qtd = Number(payload.qtddRevisada);
