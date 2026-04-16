@@ -76,7 +76,10 @@ function saveInspection(payload) {
   try {
     var idInspecao = getNextInspectionId_();
     var serverNow = new Date();
-    var client = payload.clienteManual || getClientByOP(payload.op) || '';
+    var opIsRequired = isOpRequired_();
+    var client = opIsRequired
+      ? (getClientByOP(payload.op) || '')
+      : (payload.clienteManual || getClientByOP(payload.op) || '');
     var userEmail = Session.getActiveUser().getEmail() || '';
     var operators = normalizeOperators_(payload.operadores);
     var defects = normalizeDefects_(normalizePayloadDefects_(payload.defeitos).items);
@@ -144,11 +147,11 @@ function normalizeDefects_(defects) {
 }
 
 /**
- * Busca cliente na aba op_cliente para OPs com 5 dígitos numéricos.
+ * Busca cliente na aba op_cliente para OPs numéricas com qualquer quantidade de dígitos.
  */
 function getClientByOP(op) {
   var normalizedOp = String(op || '').trim();
-  if (!/^\d{5}$/.test(normalizedOp)) {
+  if (!/^\d+$/.test(normalizedOp)) {
     return '';
   }
 
