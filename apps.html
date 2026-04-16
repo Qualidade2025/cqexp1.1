@@ -13,7 +13,7 @@ var state = {
 
 var STORAGE_KEY = 'cqexp.selectedOperators';
 var STORAGE_DATE_KEY = 'cqexp.selectedOperatorsDate';
-var OPERATOR_SLOTS = [1, 2, 3, 4];
+var OPERATOR_SLOTS = [1, 2, 3, 4, 5, 6, 7, 8];
 var OP_EMPTY_LABEL = 'Sem OP';
 
 document.addEventListener('DOMContentLoaded', function () {
@@ -155,6 +155,9 @@ function renderOperatorSelectors_() {
     var select = document.createElement('select');
     select.id = 'operador' + i;
     appendPlaceholderOption_(select);
+    select.addEventListener('change', function () {
+      updateSelectPlaceholderStyle_(select);
+    });
 
     state.catalogs.colaboradores.forEach(function (colab) {
       var option = document.createElement('option');
@@ -166,6 +169,7 @@ function renderOperatorSelectors_() {
 
     wrapper.appendChild(select);
     container.appendChild(wrapper);
+    updateSelectPlaceholderStyle_(select);
   });
 }
 
@@ -258,13 +262,14 @@ function fillOperatorSelectors_(operators) {
   });
 
   operators.forEach(function (op, index) {
-    if (index > 3) {
+    if (index > 7) {
       return;
     }
 
     var select = document.getElementById('operador' + (index + 1));
     if (select) {
       select.value = op.id;
+      updateSelectPlaceholderStyle_(select);
     }
   });
 }
@@ -589,6 +594,20 @@ function appendPlaceholderOption_(select) {
   option.value = '';
   option.textContent = 'Selecione...';
   select.appendChild(option);
+  updateSelectPlaceholderStyle_(select);
+}
+
+function updateSelectPlaceholderStyle_(select) {
+  if (!select) {
+    return;
+  }
+
+  if (String(select.value || '').trim()) {
+    select.classList.remove('placeholder-selected');
+    return;
+  }
+
+  select.classList.add('placeholder-selected');
 }
 
 function setStartupLoading_(loading) {
