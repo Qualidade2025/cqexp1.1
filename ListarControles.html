@@ -566,7 +566,8 @@
         colaboradores: [],
         posicoes: [],
         defeitosPorPosicao: {},
-        origemObrigatoria: true
+        origemObrigatoria: true,
+        opObrigatoria: false
       };
       var editState = {
         opLocked: false
@@ -657,6 +658,7 @@
             editCatalogs.posicoes = catalogs && Array.isArray(catalogs.posicoes) ? catalogs.posicoes : [];
             editCatalogs.defeitosPorPosicao = catalogs && catalogs.defeitosPorPosicao ? catalogs.defeitosPorPosicao : {};
             editCatalogs.origemObrigatoria = !!(catalogs && catalogs.origemObrigatoria);
+            editCatalogs.opObrigatoria = !!(catalogs && catalogs.opObrigatoria);
 
             origens.forEach(function (origem) {
               var value = String(origem || '').trim();
@@ -1387,9 +1389,11 @@
         var opField = document.getElementById('editOp');
         var clientField = document.getElementById('editCliente');
         var lockBtn = document.getElementById('editOpLockBtn');
-        editState.opLocked = !!locked;
+        var opRequired = !!editCatalogs.opObrigatoria;
+        editState.opLocked = opRequired ? false : !!locked;
 
         opField.readOnly = editState.opLocked;
+        opField.required = true;
         if (editState.opLocked) {
           opField.value = OP_EMPTY_LABEL;
         } else if (!preserveClient) {
@@ -1402,6 +1406,7 @@
         }
 
         lockBtn.classList.toggle('locked', editState.opLocked);
+        lockBtn.style.display = opRequired ? 'none' : '';
         syncEditRequiredIndicators_();
       }
 
@@ -1436,6 +1441,10 @@
           if (!/^\d+$/.test(opValue)) {
             return 'OP deve conter apenas dígitos numéricos.';
           }
+        }
+
+        if (editCatalogs.opObrigatoria && !opValue) {
+          return 'OP é obrigatória.';
         }
 
         if (editState.opLocked && !clienteValue) {
