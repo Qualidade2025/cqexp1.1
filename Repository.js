@@ -280,6 +280,12 @@ function isOriginRequired_() {
   return flagValue === true || String(flagValue || '').trim().toUpperCase() === 'TRUE';
 }
 
+function isOpRequired_() {
+  var sheet = getRequiredSheet_(SHEETS.COLABORADORES);
+  var flagValue = sheet.getRange('G6').getValue();
+  return flagValue === true || String(flagValue || '').trim().toUpperCase() === 'TRUE';
+}
+
 function isActiveFlag_(value) {
   if (value === true || value === 1) {
     return true;
@@ -449,7 +455,11 @@ function validateEditedInspectionBusinessRules_(op, cliente, qtd, origem) {
     throw new Error('Qtdd revisada deve ser maior que zero.');
   }
 
+  var opIsRequired = isOpRequired_();
   if (!op) {
+    if (opIsRequired) {
+      throw new Error('OP é obrigatória.');
+    }
     if (!cliente) {
       throw new Error('Cliente é obrigatório quando marcado como Sem OP.');
     }
