@@ -504,9 +504,9 @@ function applyOpLockState_(locked) {
   opField.value = state.opLocked ? OP_EMPTY_LABEL : '';
   clearOpLookupState_();
 
-  clientField.required = state.opLocked;
+  clientField.required = true;
   clientField.readOnly = false;
-  clienteLabel.textContent = state.opLocked ? 'Cliente *' : 'Cliente';
+  clienteLabel.textContent = 'Cliente *';
   lockBtn.classList.toggle('locked', state.opLocked);
   lockBtn.style.display = opRequired ? 'none' : '';
 }
@@ -535,7 +535,7 @@ function tryAutoFillClientByOp_() {
       var normalizedClient = String(cliente || '').trim();
       clientField.value = normalizedClient;
       clientField.readOnly = !!normalizedClient;
-      if (!normalizedClient && state.catalogs.opObrigatoria) {
+      if (!normalizedClient) {
         setOpLookupNotFoundState_(normalizedOp);
         setMessage_('OP ' + normalizedOp + ' não foi encontrada na aba op_cliente.', 'error');
         return;
@@ -668,10 +668,13 @@ function clearOpLookupState_() {
 }
 
 function isOpLookupInvalidForSave_() {
-  if (!state.catalogs.opObrigatoria || state.opLocked) {
+  if (state.opLocked) {
     return false;
   }
 
   var opValue = String(document.getElementById('op').value || '').trim();
+  if (!opValue) {
+    return false;
+  }
   return state.opLookup.notFound && state.opLookup.op === opValue;
 }
