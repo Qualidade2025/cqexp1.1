@@ -196,7 +196,10 @@
       .field-row3-col2 { grid-column: 2; }
       .field-row3-col3 { grid-column: 3; }
       .field-row3-col4 { grid-column: 4; }
-      .field-row3-col5 { grid-column: 5; }
+      .field-row4-col1 { grid-column: 1; }
+      .field-row4-col2 { grid-column: 2; }
+      .field-row4-col3 { grid-column: 3; }
+      .field-row4-col4 { grid-column: 4; }
 
       .edit-form-grid label {
         margin: 0;
@@ -469,24 +472,36 @@
                 <input id="editCliente" type="text" maxlength="180" />
               </label>
               <label class="field-row3-col1">
-                Criado por (e-mail)
-                <input id="editCriadoPorEmail" type="email" maxlength="180" readonly />
-              </label>
-              <label class="field-row3-col2">
                 Operador 1
                 <select id="editOperador1"></select>
               </label>
-              <label class="field-row3-col3">
+              <label class="field-row3-col2">
                 Operador 2
                 <select id="editOperador2"></select>
               </label>
-              <label class="field-row3-col4">
+              <label class="field-row3-col3">
                 Operador 3
                 <select id="editOperador3"></select>
               </label>
-              <label class="field-row3-col5">
+              <label class="field-row3-col4">
                 Operador 4
                 <select id="editOperador4"></select>
+              </label>
+              <label class="field-row4-col1">
+                Operador 5
+                <select id="editOperador5"></select>
+              </label>
+              <label class="field-row4-col2">
+                Operador 6
+                <select id="editOperador6"></select>
+              </label>
+              <label class="field-row4-col3">
+                Operador 7
+                <select id="editOperador7"></select>
+              </label>
+              <label class="field-row4-col4">
+                Operador 8
+                <select id="editOperador8"></select>
               </label>
             </div>
           </section>
@@ -687,7 +702,7 @@
       function renderEditCatalogSelects_() {
         fillSelectWithValues_(document.getElementById('editOrigem'), editCatalogs.origens);
 
-        ['editOperador1', 'editOperador2', 'editOperador3', 'editOperador4'].forEach(function (id) {
+        ['editOperador1', 'editOperador2', 'editOperador3', 'editOperador4', 'editOperador5', 'editOperador6', 'editOperador7', 'editOperador8'].forEach(function (id) {
           fillOperatorSelect_(document.getElementById(id), editCatalogs.colaboradores);
         });
       }
@@ -1119,7 +1134,6 @@
         setSelectValueEnsuringOption_(document.getElementById('editOrigem'), String(item.origem || ''));
         document.getElementById('editCliente').value = String(item.cliente || '');
         document.getElementById('editCliente').readOnly = isEditClientAutoOnlyMode_();
-        document.getElementById('editCriadoPorEmail').value = String(item.criadoPorEmail || '');
         document.getElementById('editRetrabalho').value = item.retrabalho ? 'sim' : 'nao';
 
         var operators = Array.isArray(item.operadores) ? item.operadores : [];
@@ -1127,6 +1141,10 @@
         setSelectValueEnsuringOption_(document.getElementById('editOperador2'), operators[1] || '', normalizeOperatorValueForEditSelect_);
         setSelectValueEnsuringOption_(document.getElementById('editOperador3'), operators[2] || '', normalizeOperatorValueForEditSelect_);
         setSelectValueEnsuringOption_(document.getElementById('editOperador4'), operators[3] || '', normalizeOperatorValueForEditSelect_);
+        setSelectValueEnsuringOption_(document.getElementById('editOperador5'), operators[4] || '', normalizeOperatorValueForEditSelect_);
+        setSelectValueEnsuringOption_(document.getElementById('editOperador6'), operators[5] || '', normalizeOperatorValueForEditSelect_);
+        setSelectValueEnsuringOption_(document.getElementById('editOperador7'), operators[6] || '', normalizeOperatorValueForEditSelect_);
+        setSelectValueEnsuringOption_(document.getElementById('editOperador8'), operators[7] || '', normalizeOperatorValueForEditSelect_);
 
         var parsedDefects = parseDefectsPayload_(item.defeitosJsonRaw);
         renderEditDefectRows_(parsedDefects);
@@ -1381,12 +1399,16 @@
           qtddRevisada: Number(document.getElementById('editQtddRevisada').value || 0),
           origem: String(document.getElementById('editOrigem').value || '').trim(),
           cliente: String(document.getElementById('editCliente').value || '').trim(),
-          criadoPorEmail: String(document.getElementById('editCriadoPorEmail').value || '').trim(),
+          criadoPorEmail: String(currentDetailsItem.criadoPorEmail || '').trim(),
           operadores: [
             String(document.getElementById('editOperador1').value || '').trim(),
             String(document.getElementById('editOperador2').value || '').trim(),
             String(document.getElementById('editOperador3').value || '').trim(),
-            String(document.getElementById('editOperador4').value || '').trim()
+            String(document.getElementById('editOperador4').value || '').trim(),
+            String(document.getElementById('editOperador5').value || '').trim(),
+            String(document.getElementById('editOperador6').value || '').trim(),
+            String(document.getElementById('editOperador7').value || '').trim(),
+            String(document.getElementById('editOperador8').value || '').trim()
           ],
           totalLancamentosDefeitos: Number(document.getElementById('editTotalLancamentos').value || 0),
           defeitosJsonRaw: String(document.getElementById('editDefeitosJson').value || '').trim(),
