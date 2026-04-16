@@ -507,7 +507,9 @@ function applyOpLockState_(locked) {
 
   clientField.required = true;
   clientField.readOnly = isClientAutoOnlyMode_();
-  if (!state.opLocked && !isClientAutoOnlyMode_()) {
+  if (state.opLocked) {
+    clientField.value = '';
+  } else if (!isClientAutoOnlyMode_()) {
     clientField.value = '';
   }
   clienteLabel.textContent = 'Cliente *';
@@ -700,5 +702,5 @@ function clearOpLookupMessage_() {
 }
 
 function isClientAutoOnlyMode_() {
-  return !!(state.catalogs && state.catalogs.opObrigatoria && !state.opLocked);
+  return !state.opLocked;
 }
