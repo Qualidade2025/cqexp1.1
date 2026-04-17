@@ -96,6 +96,10 @@ function saveInspection(payload) {
       operators[1] || '',
       operators[2] || '',
       operators[3] || '',
+      operators[4] || '',
+      operators[5] || '',
+      operators[6] || '',
+      operators[7] || '',
       defects.length,
       JSON.stringify(defects),
       defects.map(function (item) {
