@@ -267,6 +267,10 @@
         width: 100px;
       }
 
+      #editOpLookupMessage {
+        max-width: 100%;
+      }
+
       @media (max-width: 920px) {
         .edit-form-grid {
           grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -538,6 +542,7 @@
           <textarea id="editDefeitosResumo" hidden></textarea>
 
           <div class="modal-actions">
+            <span id="editOpLookupMessage" class="message error modal-inline-message" aria-live="polite"></span>
             <button id="cancelEditDetailsBtn" class="secondary" type="button">Cancelar</button>
             <button id="saveEditDetailsBtn" type="submit">Salvar alterações</button>
           </div>
@@ -1570,7 +1575,7 @@
         editState.opLookup.notFound = true;
         editState.opLookup.op = String(op || '').trim();
         editState.opLookup.message = 'OP ' + editState.opLookup.op + ' não foi encontrada na aba op_cliente.';
-        setMessage_(editState.opLookup.message, 'error');
+        renderEditOpLookupMessage_();
       }
 
       function clearEditOpLookupState_() {
@@ -1585,14 +1590,19 @@
       }
 
       function clearEditOpLookupMessage_() {
-        var box = document.getElementById('messageBox');
+        var box = document.getElementById('editOpLookupMessage');
+        if (!box || !editState.opLookup.message) {
+          return;
+        }
+        box.textContent = '';
+      }
+
+      function renderEditOpLookupMessage_() {
+        var box = document.getElementById('editOpLookupMessage');
         if (!box) {
           return;
         }
-
-        if (editState.opLookup.message && box.textContent === editState.opLookup.message) {
-          setMessage_('', '');
-        }
+        box.textContent = editState.opLookup.message || '';
       }
 
       function isEditOpLookupInvalidForSave_() {
