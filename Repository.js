@@ -330,7 +330,7 @@ function listInspectionsControls_(params) {
     };
   }
 
-  var values = sheet.getRange(2, 1, lastRow - 1, 15).getValues();
+  var values = sheet.getRange(2, 1, lastRow - 1, 19).getValues();
   var normalizedItems = [];
 
   values.forEach(function (row, index) {
@@ -384,7 +384,7 @@ function updateInspectionControl_(payload) {
   }
 
   var sheet = getRequiredSheet_(SHEETS.INSPECOES);
-  var values = sheet.getRange(sheetRowNumber, 1, 1, 15).getValues();
+  var values = sheet.getRange(sheetRowNumber, 1, 1, 19).getValues();
   if (!values.length) {
     throw new Error('Inspeção não encontrada para edição.');
   }
@@ -421,16 +421,20 @@ function updateInspectionControl_(payload) {
   row[8] = operators[1];
   row[9] = operators[2];
   row[10] = operators[3];
+  row[11] = operators[4];
+  row[12] = operators[5];
+  row[13] = operators[6];
+  row[14] = operators[7];
 
-  row[11] = normalizeNonNegativeNumber_(data.totalLancamentosDefeitos);
+  row[15] = normalizeNonNegativeNumber_(data.totalLancamentosDefeitos);
 
   var defectsJsonRaw = String(data.defeitosJsonRaw || '').trim();
   validateDefectsJsonRaw_(defectsJsonRaw);
-  row[12] = defectsJsonRaw;
-  row[13] = String(data.defeitosResumo || '').trim();
-  row[14] = data.retrabalho ? 'X' : '';
+  row[16] = defectsJsonRaw;
+  row[17] = String(data.defeitosResumo || '').trim();
+  row[18] = data.retrabalho ? 'X' : '';
 
-  sheet.getRange(sheetRowNumber, 1, 1, 15).setValues([row]);
+  sheet.getRange(sheetRowNumber, 1, 1, 19).setValues([row]);
 
   return {
     ok: true
@@ -502,7 +506,7 @@ function normalizeNonNegativeNumber_(value) {
 function normalizeFixedOperators_(operators) {
   var list = Array.isArray(operators) ? operators : [];
   var normalized = [];
-  for (var i = 0; i < 4; i += 1) {
+  for (var i = 0; i < 8; i += 1) {
     normalized.push(String(list[i] || '').trim());
   }
   return normalized;
@@ -530,7 +534,7 @@ function mapInspectionRow_(row, sheetRowNumber) {
     return null;
   }
 
-  var operadores = [row[7], row[8], row[9], row[10]]
+  var operadores = [row[7], row[8], row[9], row[10], row[11], row[12], row[13], row[14]]
     .map(function (value) {
       return String(value || '').trim();
     })
@@ -548,11 +552,11 @@ function mapInspectionRow_(row, sheetRowNumber) {
     cliente: String(row[5] || '').trim(),
     criadoPorEmail: String(row[6] || '').trim(),
     operadores: operadores,
-    totalLancamentosDefeitos: Number(row[11]) || 0,
-    defeitosJsonRaw: String(row[12] || '').trim(),
-    defeitosResumo: String(row[13] || '').trim(),
-    totalDefeitos: getTotalDefeitosFromJson_(row[12], row[11]),
-    retrabalho: isRetrabalhoFlag_(row[14]),
+    totalLancamentosDefeitos: Number(row[15]) || 0,
+    defeitosJsonRaw: String(row[16] || '').trim(),
+    defeitosResumo: String(row[17] || '').trim(),
+    totalDefeitos: getTotalDefeitosFromJson_(row[16], row[15]),
+    retrabalho: isRetrabalhoFlag_(row[18]),
     sheetRowNumber: sheetRowNumber
   };
 }
