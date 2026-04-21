@@ -49,8 +49,21 @@
         box-sizing: border-box;
       }
 
-      .list-total {
+      .list-summary-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
         margin: 10px 4px;
+      }
+
+      .list-total {
+        margin: 0;
+      }
+
+      .list-aggregates {
+        margin: 0;
+        text-align: right;
       }
 
       .table-actions {
@@ -360,7 +373,10 @@
         </section>
       </section>
 
-      <p id="paginationInfo" class="hint list-total">Total: 0</p>
+      <div class="list-summary-row">
+        <p id="paginationInfo" class="hint list-total">Total: 0</p>
+        <p id="aggregatesInfo" class="hint list-aggregates">Revisados: 0 | Defeitos: 0 | Retrabalho: 0,00%</p>
+      </div>
 
       <section class="card">
         <div class="table-wrap controls-table-wrap">
@@ -1016,6 +1032,32 @@
       function updatePagination_() {
         var info = document.getElementById('paginationInfo');
         info.textContent = 'Total: ' + listState.total;
+        updateAggregates_(listState.items);
+      }
+
+      function updateAggregates_(items) {
+        var info = document.getElementById('aggregatesInfo');
+        var totals = (items || []).reduce(function (acc, item) {
+          acc.revisados += Number(item && item.qtddRevisada) || 0;
+          acc.defeitos += Number(item && item.totalDefeitos) || 0;
+          return acc;
+        }, { revisados: 0, defeitos: 0 });
+
+        var retrabalhoPct = totals.revisados > 0 ? (totals.defeitos / totals.revisados) * 100 : 0;
+        info.textContent = 'Revisados: ' + formatNumber_(totals.revisados) +
+          ' | Defeitos: ' + formatNumber_(totals.defeitos) +
+          ' | Retrabalho: ' + formatPercent_(retrabalhoPct);
+      }
+
+      function formatNumber_(value) {
+        return new Intl.NumberFormat('pt-BR', { maximumFractionDigits: 0 }).format(Number(value) || 0);
+      }
+
+      function formatPercent_(value) {
+        return new Intl.NumberFormat('pt-BR', {
+          minimumFractionDigits: 2,
+          maximumFractionDigits: 2
+        }).format(Number(value) || 0) + '%';
       }
 
       function openDetailsModal_(item) {
