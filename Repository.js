@@ -656,8 +656,8 @@ function normalizeDateInput_(rawValue, endOfDay) {
     return '';
   }
 
-  var parsed = new Date(raw);
-  if (!(parsed instanceof Date) || isNaN(parsed.getTime())) {
+  var parsed = parseDateOnlyInput_(raw);
+  if (!parsed) {
     return '';
   }
 
@@ -668,6 +668,31 @@ function normalizeDateInput_(rawValue, endOfDay) {
   }
 
   return toIsoDateTime_(parsed);
+}
+
+function parseDateOnlyInput_(raw) {
+  var match = String(raw || '').trim().match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if (!match) {
+    return null;
+  }
+
+  var year = Number(match[1]);
+  var month = Number(match[2]);
+  var day = Number(match[3]);
+  if (!isFinite(year) || !isFinite(month) || !isFinite(day)) {
+    return null;
+  }
+
+  var parsed = new Date(year, month - 1, day, 0, 0, 0, 0);
+  if (!(parsed instanceof Date) || isNaN(parsed.getTime())) {
+    return null;
+  }
+
+  if (parsed.getFullYear() !== year || parsed.getMonth() !== month - 1 || parsed.getDate() !== day) {
+    return null;
+  }
+
+  return parsed;
 }
 
 function toIsoDateTime_(dateValue) {
