@@ -99,6 +99,15 @@
         text-overflow: ellipsis;
       }
 
+      #inspectionsTable th.id-col .sort-trigger {
+        position: relative;
+      }
+
+      #inspectionsTable th.id-col .sort-indicator {
+        position: absolute;
+        right: 0;
+      }
+
       .sort-trigger {
         width: 100%;
         border: none;
@@ -358,7 +367,7 @@
           <table id="inspectionsTable">
             <thead>
               <tr>
-                <th class="nowrap" data-sort-key="idInspecao" data-sort-type="numeric">
+                <th class="nowrap id-col" data-sort-key="idInspecao" data-sort-type="numeric">
                   <button type="button" class="sort-trigger"><span class="sort-label">ID</span><span class="sort-indicator"></span></button>
                 </th>
                 <th class="nowrap" data-sort-key="dataServidorSort" data-sort-type="date">
