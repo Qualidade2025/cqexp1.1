@@ -14,6 +14,9 @@ var state = {
     notFound: false,
     op: '',
     message: ''
+  },
+  startup: {
+    catalogsLoaded: false
   }
 };
 
@@ -27,8 +30,29 @@ document.addEventListener('DOMContentLoaded', function () {
     window.initThemeToggle_();
   }
   bindActions_();
-  loadCatalogs_();
+  initStartupFlow_();
 });
+
+function initStartupFlow_() {
+  var splash = initSplashScreen_();
+  var splashActive = !!(splash && splash.isActive);
+
+  loadCatalogs_({ showLoading: !splashActive });
+
+  if (!splashActive || !splash.resultPromise) {
+    return;
+  }
+
+  splash.resultPromise.then(function (result) {
+    if (result !== 'failed') {
+      return;
+    }
+
+    if (!isCatalogsReady_()) {
+      setStartupLoading_(true);
+    }
+  });
+}
 
 function bindActions_() {
   document.getElementById('op').addEventListener('blur', function () {
@@ -91,8 +115,12 @@ function bindActions_() {
   });
 }
 
-function loadCatalogs_() {
-  setStartupLoading_(true);
+function loadCatalogs_(options) {
+  var shouldShowLoading = !(options && options.showLoading === false);
+  state.startup.catalogsLoaded = false;
+  if (shouldShowLoading) {
+    setStartupLoading_(true);
+  }
 
   google.script.run
     .withSuccessHandler(function (catalogs) {
@@ -112,13 +140,122 @@ function loadCatalogs_() {
       loadStoredOperators_();
       renderSelectedOperators_();
       applyOpLockState_(false);
+      state.startup.catalogsLoaded = true;
       setStartupLoading_(false);
     })
     .withFailureHandler(function (error) {
+      state.startup.catalogsLoaded = true;
       setStartupLoading_(false);
       setMessage_('Falha ao carregar catálogos: ' + (error.message || error), 'error');
     })
     .getCatalogs();
+}
+
+function isCatalogsReady_() {
+  return !!(state.startup && state.startup.catalogsLoaded);
+}
+
+function initSplashScreen_() {
+  var splash = document.getElementById('appSplash');
+  var logoDark = document.getElementById('appSplashLogoDark');
+  var logoLight = document.getElementById('appSplashLogoLight');
+  var logoWrap = document.getElementById('appSplashLogoWrap');
+  var logoMask = document.getElementById('appSplashLogoMask');
+
+  if (!splash || !logoDark || !logoLight || !logoWrap || !logoMask) {
+    return { isActive: false };
+  }
+
+  var SPLASH_GLOW_MS = 1500;
+  var LOGO_TIMEOUT_MS = 2600;
+  var settled = false;
+  var resultResolver = null;
+  var resultPromise = new Promise(function (resolve) {
+    resultResolver = resolve;
+  });
+
+  function settle(result) {
+    if (settled) {
+      return;
+    }
+    settled = true;
+    resultResolver(result);
+  }
+
+  function getActiveLogo_() {
+    var theme = document.documentElement.getAttribute('data-theme');
+    return theme === 'light' ? logoLight : logoDark;
+  }
+
+  function finishSplash_() {
+    splash.classList.add('hidden');
+    settle('success');
+  }
+
+  function failSplash_() {
+    splash.remove();
+    settle('failed');
+  }
+
+  function isLogoLoaded_(logo) {
+    return !!(logo && logo.complete && logo.naturalWidth > 0);
+  }
+
+  function waitForLogo_(logo, onReady, onError) {
+    if (isLogoLoaded_(logo)) {
+      onReady();
+      return;
+    }
+
+    var timeoutId = window.setTimeout(function () {
+      onError();
+    }, LOGO_TIMEOUT_MS);
+
+    function cleanUp_() {
+      window.clearTimeout(timeoutId);
+      logo.removeEventListener('load', handleLoad_);
+      logo.removeEventListener('error', handleError_);
+    }
+
+    function handleLoad_() {
+      cleanUp_();
+      onReady();
+    }
+
+    function handleError_() {
+      cleanUp_();
+      onError();
+    }
+
+    logo.addEventListener('load', handleLoad_, { once: true });
+    logo.addEventListener('error', handleError_, { once: true });
+  }
+
+  var activeLogo = getActiveLogo_();
+
+  waitForLogo_(activeLogo, function () {
+    logoMask.addEventListener('animationend', function () {
+      logoWrap.classList.add('glow');
+      var glowLogo = getActiveLogo_();
+
+      glowLogo.addEventListener('animationend', function () {
+        finishSplash_();
+      }, { once: true });
+
+      window.setTimeout(function () {
+        if (!settled) {
+          finishSplash_();
+        }
+      }, SPLASH_GLOW_MS + 150);
+    }, { once: true });
+  }, function () {
+    failSplash_();
+  });
+
+  return {
+    isActive: true,
+    resultPromise: resultPromise
+  };
 }
 
 function loadStoredOperators_() {
