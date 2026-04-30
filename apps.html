@@ -69,7 +69,7 @@ function bindActions_() {
   });
 
   document.getElementById('listRncsBtn').addEventListener('click', function () {
-    showInlineStatus_('listRncsStatus', 'Carregando...');
+    setStartupLoading_(true);
     openAppPage_('listar-rncs');
   });
 
@@ -367,8 +367,8 @@ function openAppPage_(page) {
       replaceCurrentDocument_(html);
     })
     .withFailureHandler(function (error) {
+      setStartupLoading_(false);
       setMessage_('Falha ao abrir página: ' + (error.message || error), 'error');
-      showInlineStatus_('listRncsStatus', '');
     })
     .renderPageHtml(page);
 }
