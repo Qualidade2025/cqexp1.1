@@ -73,7 +73,33 @@
       }
 
       .list-pager button {
-        min-width: 90px;
+        width: 38px;
+        height: 38px;
+        min-width: 38px;
+        padding: 0;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+      }
+
+      .pager-triangle {
+        position: relative;
+      }
+
+      .pager-triangle::before {
+        content: '';
+        width: 0;
+        height: 0;
+        border-top: 10px solid transparent;
+        border-bottom: 10px solid transparent;
+      }
+
+      .pager-triangle.prev::before {
+        border-right: 14px solid currentColor;
+      }
+
+      .pager-triangle.next::before {
+        border-left: 14px solid currentColor;
       }
 
       .table-actions {
@@ -329,13 +355,13 @@
       <section class="page-header">
         <div class="header-actions-left">
           <span class="button-with-status">
-            <button class="secondary" type="button" onclick="goBack_()">← Voltar</button>
+            <button class="secondary" type="button" onclick="goBack_()">Voltar</button>
             <span id="goBackStatus" class="hint inline-status" aria-live="polite"></span>
           </span>
         </div>
         <h2 class="page-title">Listar controles</h2>
         <div class="header-actions-right">
-          <button class="secondary theme-toggle" type="button" data-theme-toggle aria-label="Alternar tema">🌙</button>
+          <button class="secondary theme-toggle" type="button" data-theme-toggle aria-label="Alternar tema">◐</button>
         </div>
       </section>
 
@@ -386,9 +412,9 @@
       <div class="list-summary-row">
         <p id="paginationInfo" class="hint list-total">Total: 0</p>
         <div class="list-pager">
-          <button id="prevPageBtn" class="secondary" type="button" aria-label="Página anterior">←</button>
+          <button id="prevPageBtn" class="secondary pager-triangle prev" type="button" aria-label="Página anterior"></button>
           <span id="pageInfo" class="hint">Página 1 de 1</span>
-          <button id="nextPageBtn" class="secondary" type="button" aria-label="Próxima página">→</button>
+          <button id="nextPageBtn" class="secondary pager-triangle next" type="button" aria-label="Próxima página"></button>
         </div>
         <p id="aggregatesInfo" class="hint list-aggregates">Revisados: 0 | Defeitos: 0 | Retrabalho: 0,00%</p>
       </div>
