@@ -323,14 +323,15 @@
           localStorage.setItem(THEME_KEY, nextTheme);
         });
 
-        // Fallback simples caso a imagem ativa não carregue.
+        // Se a logo ativa não carregar, pula a splash e abre direto a home.
         const handleLogoError = (event) => {
           if (event.currentTarget !== getActiveLogo()) {
             return;
           }
 
-          event.currentTarget.style.display = 'none';
-          fallback.style.display = 'grid';
+          main.setAttribute('data-ready', 'true');
+          splash.classList.add('hide');
+          setTimeout(openHome, SPLASH_FADE_MS);
         };
 
         logoDark.addEventListener('error', handleLogoError);
