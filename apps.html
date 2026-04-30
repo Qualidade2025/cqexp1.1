@@ -741,16 +741,17 @@ function saveInspection_() {
   var payload = buildPayload_();
 
   setLoading_(true);
-  setMessage_('Salvando...', 'info');
+  setSaveLoadingOverlay_(true);
 
   google.script.run
     .withSuccessHandler(function (response) {
       setLoading_(false);
+      setSaveLoadingOverlay_(false);
       resetForm_();
-      setMessage_('Inspeção salva com sucesso! ID: ' + response.idInspecao, 'success', true);
     })
     .withFailureHandler(function (error) {
       setLoading_(false);
+      setSaveLoadingOverlay_(false);
       setMessage_(error.message || String(error), 'error');
     })
     .saveInspection(payload);
@@ -777,6 +778,20 @@ function setLoading_(loading) {
   document.getElementById('clearBtn').disabled = loading;
   document.getElementById('addDefectBtn').disabled = loading;
   document.getElementById('editOperatorsBtn').disabled = loading;
+}
+
+function setSaveLoadingOverlay_(loading) {
+  var overlay = document.getElementById('saveLoadingOverlay');
+  if (!overlay) {
+    return;
+  }
+
+  if (loading) {
+    overlay.classList.remove('hidden');
+    return;
+  }
+
+  overlay.classList.add('hidden');
 }
 
 function setMessage_(text, type, autoClear) {
