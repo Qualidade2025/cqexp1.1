@@ -362,24 +362,26 @@ function showInlineStatus_(elementId, text) {
 }
 
 function openAppPage_(page) {
-  window.location.href = buildAppUrl_(page);
+  google.script.run
+    .withSuccessHandler(function (html) {
+      replaceCurrentDocument_(html);
+    })
+    .withFailureHandler(function (error) {
+      setMessage_('Falha ao abrir página: ' + (error.message || error), 'error');
+      showInlineStatus_('listRncsStatus', '');
+    })
+    .renderPageHtml(page);
 }
 
-function buildAppUrl_(page) {
-  var baseUrl = String(window.APP_BASE_URL || '').trim();
-
-  if (!baseUrl) {
-    var currentUrl = window.location.href;
-    if (currentUrl.indexOf('?') === -1) {
-      return currentUrl + '?page=' + encodeURIComponent(page);
-    }
-    if (/[?&]page=/.test(currentUrl)) {
-      return currentUrl.replace(/([?&])page=[^&]*/g, '$1page=' + encodeURIComponent(page));
-    }
-    return currentUrl + '&page=' + encodeURIComponent(page);
+function replaceCurrentDocument_(html) {
+  var content = String(html || '');
+  if (!content) {
+    throw new Error('Conteúdo da página vazio.');
   }
 
-  return baseUrl + '?page=' + encodeURIComponent(page);
+  document.open();
+  document.write(content);
+  document.close();
 }
 
 function openPasswordModal_() {
