@@ -628,7 +628,7 @@ function matchesInspectionFilters_(item, filters) {
 function normalizePageSize_(pageSize) {
   var parsed = Number(pageSize);
   if (!isFinite(parsed) || parsed < 1) {
-    return 25;
+    return 50;
   }
   return Math.min(Math.floor(parsed), 100);
 }
