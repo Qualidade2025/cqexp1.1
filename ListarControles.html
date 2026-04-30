@@ -729,6 +729,12 @@
       </section>
     </div>
 
+    <div id="inspectionPasswordLoadingOverlay" class="startup-loading hidden" role="status" aria-live="polite">
+      <div class="startup-loading-card circular" aria-label="Validando senha para editar inspeção">
+        <span class="loading-spinner" aria-hidden="true"></span>
+      </div>
+    </div>
+
     <div id="editSavingOverlay" class="startup-loading hidden" role="status" aria-live="polite">
       <div class="startup-loading-card">
         <span class="loading-spinner" aria-hidden="true"></span>
@@ -1377,6 +1383,7 @@
 
         errorBox.textContent = '';
         errorBox.className = 'message error modal-inline-message';
+        setInspectionPasswordLoadingOverlay_(false);
         passwordInput.value = '';
         document.getElementById('inspectionPasswordModal').classList.remove('hidden');
         passwordInput.focus();
@@ -1385,6 +1392,7 @@
       function closeInspectionPasswordModal_() {
         document.getElementById('inspectionPasswordModal').classList.add('hidden');
         document.getElementById('inspectionPasswordModalError').textContent = '';
+        setInspectionPasswordLoadingOverlay_(false);
       }
 
       function confirmInspectionPassword_() {
@@ -1399,21 +1407,34 @@
 
         errorBox.textContent = '';
         confirmBtn.disabled = true;
-        errorBox.className = 'message info modal-inline-message';
-        errorBox.textContent = 'Validando...';
+        setInspectionPasswordLoadingOverlay_(true);
 
         google.script.run
           .withSuccessHandler(function () {
             confirmBtn.disabled = false;
+            setInspectionPasswordLoadingOverlay_(false);
             closeInspectionPasswordModal_();
             openEditModal_();
           })
           .withFailureHandler(function (error) {
             confirmBtn.disabled = false;
+            setInspectionPasswordLoadingOverlay_(false);
             errorBox.className = 'message error modal-inline-message';
             errorBox.textContent = error.message || String(error);
           })
           .validateCollaboratorsPassword(password);
+      }
+
+      function setInspectionPasswordLoadingOverlay_(loading) {
+        var overlay = document.getElementById('inspectionPasswordLoadingOverlay');
+        if (!overlay) {
+          return;
+        }
+        if (loading) {
+          overlay.classList.remove('hidden');
+          return;
+        }
+        overlay.classList.add('hidden');
       }
 
       function openEditModal_() {
