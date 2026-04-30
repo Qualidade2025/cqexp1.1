@@ -404,8 +404,7 @@ function confirmCollaboratorsPassword_() {
   var confirmBtn = document.getElementById('confirmPasswordBtn');
   errorBox.textContent = '';
   confirmBtn.disabled = true;
-  errorBox.className = 'message info modal-inline-message';
-  errorBox.textContent = 'Abrindo...';
+  setStartupLoading_(true);
 
   google.script.run
     .withSuccessHandler(function () {
@@ -415,6 +414,7 @@ function confirmCollaboratorsPassword_() {
     })
     .withFailureHandler(function (error) {
       confirmBtn.disabled = false;
+      setStartupLoading_(false);
       errorBox.className = 'message error modal-inline-message';
       errorBox.textContent = error.message || String(error);
     })
