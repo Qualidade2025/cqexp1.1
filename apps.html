@@ -157,6 +157,23 @@ function isCatalogsReady_() {
 
 function initSplashScreen_() {
   var splash = document.getElementById('appSplash');
+  var skipSplashFromNavigation = false;
+  try {
+    skipSplashFromNavigation = window.sessionStorage.getItem('cqexp.skipSplashOnce') === '1';
+    if (skipSplashFromNavigation) {
+      window.sessionStorage.removeItem('cqexp.skipSplashOnce');
+    }
+  } catch (error) {}
+
+  var params = new URLSearchParams(window.location.search || '');
+  if (skipSplashFromNavigation || params.get('nosplash') === '1') {
+    if (splash) {
+      splash.classList.add('hidden');
+      splash.remove();
+    }
+    return { isActive: false };
+  }
+
   var logoDark = document.getElementById('appSplashLogoDark');
   var logoLight = document.getElementById('appSplashLogoLight');
   var logoWrap = document.getElementById('appSplashLogoWrap');
