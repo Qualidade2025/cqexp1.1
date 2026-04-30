@@ -115,6 +115,16 @@
         overflow-y: auto;
       }
 
+      .controls-table-wrap.is-loading {
+        height: 620px;
+        min-height: 620px;
+        overflow-y: hidden;
+      }
+
+      .controls-table-wrap.is-loading #inspectionsTable tbody {
+        display: none;
+      }
+
       .table-loading-modal{
         position:absolute;
         top:0;
@@ -135,9 +145,7 @@
         left:0;
         right:0;
         bottom:0;
-        background:var(--overlay);
-        backdrop-filter:blur(4px);
-        -webkit-backdrop-filter:blur(4px);
+        background:transparent;
       }
 
       .table-loading-dialog{
@@ -998,13 +1006,27 @@
 
       function setTableLoading_(isLoading) {
         var loadingModal = document.getElementById('tableLoadingModal');
+        var tableWrap = document.querySelector('.controls-table-wrap');
+        var inspectionsTable = document.getElementById('inspectionsTable');
         if (!loadingModal) {
           return;
         }
         if (isLoading) {
+          if (tableWrap) {
+            tableWrap.classList.add('is-loading');
+          }
+          if (inspectionsTable) {
+            inspectionsTable.setAttribute('aria-hidden', 'true');
+          }
           loadingModal.classList.remove('hidden');
           loadingModal.setAttribute('aria-hidden', 'false');
           return;
+        }
+        if (tableWrap) {
+          tableWrap.classList.remove('is-loading');
+        }
+        if (inspectionsTable) {
+          inspectionsTable.setAttribute('aria-hidden', 'false');
         }
         loadingModal.classList.add('hidden');
         loadingModal.setAttribute('aria-hidden', 'true');
