@@ -6,6 +6,59 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Colaboradores</title>
     <?!= include('styles') ?>
+    <style>
+      .collaborators-table-wrap {
+        position: relative;
+        min-height: 220px;
+        transition: height 180ms ease;
+      }
+
+      .collaborators-table-wrap.is-loading {
+        height: min(560px, 60vh);
+      }
+
+      .collaborators-table-wrap.is-loading #collaboratorsRows {
+        opacity: 0;
+      }
+
+      #collaboratorsRows {
+        transition: opacity 120ms ease;
+      }
+
+      .collaborators-table-loading {
+        position: absolute;
+        inset: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        pointer-events: none;
+      }
+
+      .collaborators-table-loading::before {
+        content: '';
+        width: 66px;
+        height: 66px;
+        border-radius: 50%;
+        box-shadow: 0 12px 26px rgba(3, 10, 28, 0.35);
+        position: absolute;
+      }
+
+      .collaborators-table-loading.hidden {
+        display: none;
+      }
+
+      .collaborators-table-loading .loading-spinner {
+        width: 32px;
+        height: 32px;
+        border-width: 4px;
+        z-index: 1;
+      }
+
+      .collaborators-table-wrap table thead {
+        position: relative;
+        z-index: 2;
+      }
+    </style>
   </head>
   <body>
     <main class="container">
@@ -20,8 +73,8 @@
           <button id="addCollaboratorBtn" class="secondary" type="button">+ Adicionar colaborador</button>
         </div>
 
-        <div class="table-wrap">
-          <table>
+        <div id="collaboratorsTableWrap" class="table-wrap collaborators-table-wrap">
+          <table id="collaboratorsTable">
             <thead>
               <tr>
                 <th>ID</th>
@@ -32,6 +85,9 @@
             </thead>
             <tbody id="collaboratorsRows"></tbody>
           </table>
+          <div id="collaboratorsTableLoading" class="collaborators-table-loading hidden" role="status" aria-live="polite" aria-label="Carregando colaboradores">
+            <span class="loading-spinner" aria-hidden="true"></span>
+          </div>
         </div>
       </section>
 
@@ -93,10 +149,44 @@
         navigateToMainPage_(fallbackUrl.toString());
       }
 
+      function setCollaboratorsTableLoading_(loading) {
+        var tableWrap = document.getElementById('collaboratorsTableWrap');
+        var loadingBox = document.getElementById('collaboratorsTableLoading');
+        if (!tableWrap || !loadingBox) {
+          return;
+        }
+
+        if (loading) {
+          tableWrap.classList.add('is-loading');
+          loadingBox.classList.remove('hidden');
+          return;
+        }
+
+        tableWrap.classList.remove('is-loading');
+        loadingBox.classList.add('hidden');
+      }
+
+      function updateCollaboratorsTableHeight_() {
+        var tableWrap = document.getElementById('collaboratorsTableWrap');
+        var table = document.getElementById('collaboratorsTable');
+        if (!tableWrap || !table) {
+          return;
+        }
+
+        tableWrap.style.height = 'auto';
+        var desired = table.offsetHeight + 16;
+        var maxHeight = Math.min(window.innerHeight * 0.6, 560);
+        var minHeight = 220;
+        var nextHeight = Math.max(minHeight, Math.min(desired, maxHeight));
+        tableWrap.style.height = nextHeight + 'px';
+      }
+
       function loadRows_() {
-        setMessage_('Carregando colaboradores...', 'info');
+        setCollaboratorsTableLoading_(true);
 
         if (!window.google || !google.script || !google.script.run) {
+          setCollaboratorsTableLoading_(false);
+          updateCollaboratorsTableHeight_();
           setMessage_('Falha ao carregar colaboradores: ambiente do Apps Script indisponível.', 'error');
           return;
         }
@@ -105,13 +195,18 @@
           google.script.run
             .withSuccessHandler(function (rows) {
               renderRows_(Array.isArray(rows) ? rows : []);
-              setMessage_('', 'info');
+              setCollaboratorsTableLoading_(false);
+              updateCollaboratorsTableHeight_();
             })
             .withFailureHandler(function (error) {
+              setCollaboratorsTableLoading_(false);
+              updateCollaboratorsTableHeight_();
               setMessage_('Falha ao carregar colaboradores: ' + (error.message || error), 'error');
             })
             .listCollaboratorsControls();
         } catch (error) {
+          setCollaboratorsTableLoading_(false);
+          updateCollaboratorsTableHeight_();
           setMessage_('Falha ao carregar colaboradores: ' + (error.message || error), 'error');
         }
       }
