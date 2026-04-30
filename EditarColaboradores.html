@@ -100,6 +100,7 @@
         justify-content: center;
         background: var(--surface);
         box-shadow: var(--shadow);
+        transform: translateX(-3px);
       }
 
       .navigation-loading-modal .table-loading-spinner {
@@ -387,6 +388,7 @@
         tr.appendChild(actionCell);
 
         tbody.appendChild(tr);
+        updateCollaboratorsTableHeight_();
       }
 
       function getNextCollaboratorId_() {
