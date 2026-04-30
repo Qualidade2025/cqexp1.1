@@ -1920,6 +1920,17 @@
         }
       }
 
+      function replaceCurrentDocument_(html) {
+        var content = String(html || '');
+        if (!content) {
+          throw new Error('Conteúdo da página vazio.');
+        }
+
+        document.open();
+        document.write(content);
+        document.close();
+      }
+
       function showNavigationLoading_() {
         var overlay = document.getElementById('navigationLoadingOverlay');
         if (!overlay) {
@@ -1931,7 +1942,15 @@
       function goBack_() {
         showNavigationLoading_();
         markSkipSplashOnce_();
-        navigateToMainPage_(buildHomeUrlWithoutSplash_());
+
+        google.script.run
+          .withSuccessHandler(function (html) {
+            replaceCurrentDocument_(html);
+          })
+          .withFailureHandler(function () {
+            navigateToMainPage_(buildHomeUrlWithoutSplash_());
+          })
+          .renderPageHtml('index');
       }
 
       function markSkipSplashOnce_() {
