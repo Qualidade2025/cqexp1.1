@@ -49,6 +49,10 @@
         box-sizing: border-box;
       }
 
+      .filter-compact.placeholder-selected {
+        color: #757575;
+      }
+
       .list-summary-row {
         display: flex;
         align-items: center;
@@ -429,11 +433,11 @@
         <div class="filters-grid">
           <label>
             Data inicial
-            <input id="filterDateStart" class="filter-compact" type="date" />
+            <input id="filterDateStart" class="filter-compact" type="date" data-placeholder-value="" />
           </label>
           <label>
             Data final
-            <input id="filterDateEnd" class="filter-compact" type="date" />
+            <input id="filterDateEnd" class="filter-compact" type="date" data-placeholder-value="" />
           </label>
           <label>
             OP
@@ -445,13 +449,13 @@
           </label>
           <label>
             Origem
-            <select id="filterOrigem" class="filter-compact">
+            <select id="filterOrigem" class="filter-compact" data-placeholder-value="">
               <option value="">Todas</option>
             </select>
           </label>
           <label>
             Retrabalho
-            <select id="filterRetrabalho" class="filter-compact">
+            <select id="filterRetrabalho" class="filter-compact" data-placeholder-value="todos">
               <option value="todos">Todos</option>
               <option value="sim">Somente retrabalho</option>
               <option value="nao">Sem retrabalho</option>
@@ -759,6 +763,11 @@
       }
 
       function bindActions_() {
+        bindFilterFieldPlaceholderStyle_(document.getElementById('filterDateStart'));
+        bindFilterFieldPlaceholderStyle_(document.getElementById('filterDateEnd'));
+        bindFilterFieldPlaceholderStyle_(document.getElementById('filterOrigem'));
+        bindFilterFieldPlaceholderStyle_(document.getElementById('filterRetrabalho'));
+
         document.getElementById('applyFiltersBtn').addEventListener('click', function () {
           listState.page = 1;
           loadInspections_();
@@ -1054,6 +1063,36 @@
         document.getElementById('filterOrigem').value = '';
         document.getElementById('filterOperador').value = '';
         document.getElementById('filterRetrabalho').value = 'todos';
+        updateFilterFieldPlaceholderStyle_(document.getElementById('filterDateStart'));
+        updateFilterFieldPlaceholderStyle_(document.getElementById('filterDateEnd'));
+        updateFilterFieldPlaceholderStyle_(document.getElementById('filterOrigem'));
+        updateFilterFieldPlaceholderStyle_(document.getElementById('filterRetrabalho'));
+      }
+
+      function bindFilterFieldPlaceholderStyle_(field) {
+        if (!field || field.dataset.placeholderFieldBound === '1') {
+          return;
+        }
+        ['change', 'input'].forEach(function (eventName) {
+          field.addEventListener(eventName, function () {
+            updateFilterFieldPlaceholderStyle_(field);
+          });
+        });
+        field.dataset.placeholderFieldBound = '1';
+        updateFilterFieldPlaceholderStyle_(field);
+      }
+
+      function updateFilterFieldPlaceholderStyle_(field) {
+        if (!field) {
+          return;
+        }
+        var placeholderValue = String(field.dataset.placeholderValue || '');
+        var currentValue = String(field.value || '');
+        if (currentValue === placeholderValue) {
+          field.classList.add('placeholder-selected');
+          return;
+        }
+        field.classList.remove('placeholder-selected');
       }
 
       function renderTable_(items) {
