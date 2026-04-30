@@ -386,9 +386,9 @@
       <div class="list-summary-row">
         <p id="paginationInfo" class="hint list-total">Total: 0</p>
         <div class="list-pager">
-          <button id="prevPageBtn" class="secondary" type="button">Anterior</button>
+          <button id="prevPageBtn" class="secondary" type="button" aria-label="Página anterior">←</button>
           <span id="pageInfo" class="hint">Página 1 de 1</span>
-          <button id="nextPageBtn" class="secondary" type="button">Próxima</button>
+          <button id="nextPageBtn" class="secondary" type="button" aria-label="Próxima página">→</button>
         </div>
         <p id="aggregatesInfo" class="hint list-aggregates">Revisados: 0 | Defeitos: 0 | Retrabalho: 0,00%</p>
       </div>
@@ -621,6 +621,10 @@
         totalPages: 1,
         total: 0,
         items: [],
+        aggregates: {
+          revisados: 0,
+          defeitos: 0
+        },
         sort: {
           key: null,
           type: null,
@@ -891,6 +895,10 @@
             listState.page = Number(result.page) || 1;
             listState.pageSize = Number(result.pageSize) || 50;
             listState.totalPages = Number(result.totalPages) || 1;
+            listState.aggregates = {
+              revisados: Number(result.revisadosFiltrados) || 0,
+              defeitos: Number(result.defeitosFiltrados) || 0
+            };
 
             renderTable_(listState.items);
             updatePagination_();
@@ -1065,18 +1073,23 @@
         var nextPageBtn = document.getElementById('nextPageBtn');
         info.textContent = 'Total: ' + listState.total;
         pageInfo.textContent = 'Página ' + listState.page + ' de ' + listState.totalPages;
+
+        if (listState.totalPages <= 1) {
+          prevPageBtn.style.display = 'none';
+          nextPageBtn.style.display = 'none';
+        } else {
+          prevPageBtn.style.display = '';
+          nextPageBtn.style.display = '';
+        }
+
         prevPageBtn.disabled = listState.page <= 1;
         nextPageBtn.disabled = listState.page >= listState.totalPages;
-        updateAggregates_(listState.items);
+        updateAggregates_(listState.aggregates);
       }
 
-      function updateAggregates_(items) {
+      function updateAggregates_(aggregates) {
         var info = document.getElementById('aggregatesInfo');
-        var totals = (items || []).reduce(function (acc, item) {
-          acc.revisados += Number(item && item.qtddRevisada) || 0;
-          acc.defeitos += Number(item && item.totalDefeitos) || 0;
-          return acc;
-        }, { revisados: 0, defeitos: 0 });
+        var totals = aggregates && typeof aggregates === 'object' ? aggregates : { revisados: 0, defeitos: 0 };
 
         var retrabalhoPct = totals.revisados > 0 ? (totals.defeitos / totals.revisados) * 100 : 0;
         info.textContent = 'Revisados: ' + formatNumber_(totals.revisados) +
