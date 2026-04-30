@@ -73,9 +73,9 @@
       }
 
       .list-pager button {
-        width: 38px;
-        height: 38px;
-        min-width: 38px;
+        width: 30px;
+        height: 30px;
+        min-width: 30px;
         padding: 0;
         display: inline-flex;
         align-items: center;
@@ -90,16 +90,16 @@
         content: '';
         width: 0;
         height: 0;
-        border-top: 10px solid transparent;
-        border-bottom: 10px solid transparent;
+        border-top: 7px solid transparent;
+        border-bottom: 7px solid transparent;
       }
 
       .pager-triangle.prev::before {
-        border-right: 14px solid currentColor;
+        border-right: 10px solid currentColor;
       }
 
       .pager-triangle.next::before {
-        border-left: 14px solid currentColor;
+        border-left: 10px solid currentColor;
       }
 
       .table-actions {
@@ -110,8 +110,60 @@
       }
 
       .controls-table-wrap {
+        position: relative;
         max-height: 620px;
         overflow-y: auto;
+      }
+
+      .table-loading-modal{
+        position:absolute;
+        top:0;
+        left:0;
+        right:0;
+        bottom:0;
+        display:flex;
+        align-items:center;
+        justify-content:center;
+        z-index:5;
+      }
+
+      .table-loading-modal.hidden{display:none !important}
+
+      .table-loading-backdrop{
+        position:absolute;
+        top:0;
+        left:0;
+        right:0;
+        bottom:0;
+        background:var(--overlay);
+        backdrop-filter:blur(4px);
+        -webkit-backdrop-filter:blur(4px);
+      }
+
+      .table-loading-dialog{
+        position:relative;
+        z-index:1;
+        width:72px;
+        height:72px;
+        border-radius:50%;
+        display:flex;
+        align-items:center;
+        justify-content:center;
+        background:var(--surface);
+        box-shadow:var(--shadow);
+      }
+
+      .table-loading-spinner{
+        width:34px;
+        height:34px;
+        border:4px solid var(--border);
+        border-top-color:var(--primary);
+        border-radius:50%;
+        animation:table-loading-spin 0.9s linear infinite;
+      }
+
+      @keyframes table-loading-spin{
+        to{ transform:rotate(360deg); }
       }
 
       #inspectionsTable th,
@@ -456,6 +508,12 @@
             </thead>
             <tbody id="inspectionsRows"></tbody>
           </table>
+          <div id="tableLoadingModal" class="table-loading-modal hidden" aria-hidden="true">
+            <div class="table-loading-backdrop"></div>
+            <div class="table-loading-dialog" role="status" aria-live="polite" aria-label="Carregando listagem">
+              <div class="table-loading-spinner" aria-hidden="true"></div>
+            </div>
+          </div>
         </div>
       </section>
 
@@ -911,7 +969,7 @@
           return;
         }
 
-        setMessage_('Carregando inspeções...', 'info');
+        setTableLoading_(true);
 
         google.script.run
           .withSuccessHandler(function (response) {
@@ -928,17 +986,28 @@
 
             renderTable_(listState.items);
             updatePagination_();
-
-            if (!listState.items.length) {
-              setMessage_('Nenhum controle encontrado para os filtros informados.', 'info');
-            } else {
-              setMessage_('Total filtrado: ' + listState.total + ' inspeções.', 'success', true);
-            }
+            setMessage_('', '');
+            setTableLoading_(false);
           })
           .withFailureHandler(function (error) {
+            setTableLoading_(false);
             setMessage_('Falha ao carregar inspeções: ' + (error.message || error), 'error');
           })
           .listInspectionsControls(getFiltersPayload_());
+      }
+
+      function setTableLoading_(isLoading) {
+        var loadingModal = document.getElementById('tableLoadingModal');
+        if (!loadingModal) {
+          return;
+        }
+        if (isLoading) {
+          loadingModal.classList.remove('hidden');
+          loadingModal.setAttribute('aria-hidden', 'false');
+          return;
+        }
+        loadingModal.classList.add('hidden');
+        loadingModal.setAttribute('aria-hidden', 'true');
       }
 
      function getFiltersPayload_() {
