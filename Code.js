@@ -18,6 +18,14 @@ function doGet(e) {
     .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL);
 }
 
+
+function renderPageHtml(page) {
+  var templateName = getTemplateNameByPage_(String(page || '').trim());
+  var template = HtmlService.createTemplateFromFile(templateName);
+  template.appBaseUrl = getAppBaseUrl_();
+  return template.evaluate().getContent();
+}
+
 function getAppBaseUrl_() {
   try {
     return ScriptApp.getService().getUrl() || '';
