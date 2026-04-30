@@ -173,6 +173,8 @@
     position: fixed;
     inset: 0;
     background: var(--overlay);
+    -webkit-backdrop-filter: blur(5px);
+    backdrop-filter: blur(5px);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -195,6 +197,20 @@
     gap: 12px;
     font-size: 15px;
     font-weight: 600;
+  }
+
+  .startup-loading-card.circular {
+    width: 72px;
+    height: 72px;
+    border-radius: 50%;
+    padding: 0;
+    justify-content: center;
+  }
+
+  .startup-loading-card.circular .loading-spinner {
+    width: 34px;
+    height: 34px;
+    border-width: 4px;
   }
 
   .loading-spinner {
