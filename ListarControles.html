@@ -180,6 +180,23 @@
         to{ transform:rotate(360deg); }
       }
 
+      .navigation-loading-modal{
+        position:fixed;
+        inset:0;
+        display:flex;
+        align-items:center;
+        justify-content:center;
+        z-index:40;
+      }
+
+      .navigation-loading-modal.hidden{display:none !important}
+
+      .navigation-loading-modal .table-loading-backdrop{
+        background:var(--overlay);
+        -webkit-backdrop-filter: blur(5px);
+        backdrop-filter: blur(5px);
+      }
+
       #inspectionsTable th,
       #inspectionsTable td {
         font-size: 12px;
@@ -424,10 +441,7 @@
     <main class="container">
       <section class="page-header">
         <div class="header-actions-left">
-          <span class="button-with-status">
-            <button class="secondary" type="button" onclick="goBack_()">Voltar</button>
-            <span id="goBackStatus" class="hint inline-status" aria-live="polite"></span>
-          </span>
+          <button class="secondary" type="button" onclick="goBack_()">Voltar</button>
         </div>
         <h2 class="page-title">Listar controles</h2>
         <div class="header-actions-right">
@@ -537,6 +551,14 @@
 
       <section id="messageBox" class="message" aria-live="polite"></section>
     </main>
+
+
+    <div id="navigationLoadingOverlay" class="navigation-loading-modal hidden" role="status" aria-live="polite" aria-label="Carregando página inicial">
+      <div class="table-loading-backdrop" aria-hidden="true"></div>
+      <div class="table-loading-dialog">
+        <div class="table-loading-spinner" aria-hidden="true"></div>
+      </div>
+    </div>
 
     <div id="detailsModal" class="modal-backdrop hidden" role="dialog" aria-modal="true" aria-labelledby="detailsModalTitle">
       <section class="modal-card">
@@ -1898,17 +1920,41 @@
         }
       }
 
-      function goBack_() {
-        showInlineStatus_('goBackStatus', 'Voltando...');
-
-        if (window.APP_BASE_URL) {
-          navigateToMainPage_(window.APP_BASE_URL);
+      function showNavigationLoading_() {
+        var overlay = document.getElementById('navigationLoadingOverlay');
+        if (!overlay) {
           return;
         }
+        overlay.classList.remove('hidden');
+      }
 
-        var fallbackUrl = new URL(window.location.href);
-        fallbackUrl.searchParams.set('page', 'index');
-        navigateToMainPage_(fallbackUrl.toString());
+      function goBack_() {
+        showNavigationLoading_();
+        markSkipSplashOnce_();
+        navigateToMainPage_(buildHomeUrlWithoutSplash_());
+      }
+
+      function markSkipSplashOnce_() {
+        try {
+          window.sessionStorage.setItem('cqexp.skipSplashOnce', '1');
+        } catch (error) {}
+      }
+
+      function buildHomeUrlWithoutSplash_() {
+        var baseUrl = String(window.APP_BASE_URL || '').trim();
+        var homeUrl = '';
+
+        if (baseUrl) {
+          homeUrl = baseUrl + '?page=index';
+        } else {
+          var fallbackUrl = new URL(window.location.href);
+          fallbackUrl.searchParams.set('page', 'index');
+          homeUrl = fallbackUrl.toString();
+        }
+
+        var url = new URL(homeUrl, window.location.origin);
+        url.searchParams.set('nosplash', '1');
+        return url.toString();
       }
 
       function setMessage_(text, type, autoClear) {
