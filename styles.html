@@ -553,11 +553,7 @@
   .theme-toggle-icon {
     display: inline-block;
     line-height: 1;
-    filter: grayscale(1) saturate(0) brightness(0);
-  }
-
-  html[data-theme='dark'] .theme-toggle-icon {
-    filter: grayscale(1) saturate(0) brightness(2.4);
+    font-size: 16px;
   }
 
   .brand-header {
@@ -643,7 +639,7 @@
     function updateThemeToggleLabel_() {
       var theme = document.documentElement.getAttribute('data-theme') || 'light';
       var toggles = document.querySelectorAll('[data-theme-toggle]');
-      var icon = theme === 'dark' ? '☀️' : '🌙';
+      var icon = '◐';
       for (var i = 0; i < toggles.length; i += 1) {
         toggles[i].innerHTML = '<span class="theme-toggle-icon" aria-hidden="true">' + icon + '</span>';
         toggles[i].setAttribute('aria-label', theme === 'dark' ? 'Ativar modo claro' : 'Ativar modo escuro');
