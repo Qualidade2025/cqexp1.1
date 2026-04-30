@@ -355,6 +355,12 @@ function listInspectionsControls_(params) {
     return b.idInspecao - a.idInspecao;
   });
 
+  var aggregates = normalizedItems.reduce(function (acc, item) {
+    acc.revisados += Number(item && item.qtddRevisada) || 0;
+    acc.defeitos += Number(item && item.totalDefeitos) || 0;
+    return acc;
+  }, { revisados: 0, defeitos: 0 });
+
   var total = normalizedItems.length;
   var totalPages = Math.max(1, Math.ceil(total / pageSize));
   var safePage = Math.min(page, totalPages);
@@ -366,7 +372,9 @@ function listInspectionsControls_(params) {
     total: total,
     page: safePage,
     pageSize: pageSize,
-    totalPages: totalPages
+    totalPages: totalPages,
+    revisadosFiltrados: aggregates.revisados,
+    defeitosFiltrados: aggregates.defeitos
   };
 }
 
