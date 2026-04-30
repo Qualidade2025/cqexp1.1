@@ -58,12 +58,70 @@
         position: relative;
         z-index: 2;
       }
+
+      .collaborators-back-btn {
+        height: 34px;
+        min-height: 34px;
+        padding-top: 0;
+        padding-bottom: 0;
+        display: inline-flex;
+        align-items: center;
+      }
+
+      .navigation-loading-modal {
+        position: fixed;
+        inset: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 40;
+      }
+
+      .navigation-loading-modal.hidden {
+        display: none !important;
+      }
+
+      .navigation-loading-modal .table-loading-backdrop {
+        position: absolute;
+        inset: 0;
+        background: var(--overlay);
+        -webkit-backdrop-filter: blur(5px);
+        backdrop-filter: blur(5px);
+      }
+
+      .navigation-loading-modal .table-loading-dialog {
+        position: relative;
+        z-index: 1;
+        width: 72px;
+        height: 72px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: var(--surface);
+        box-shadow: var(--shadow);
+      }
+
+      .navigation-loading-modal .table-loading-spinner {
+        width: 34px;
+        height: 34px;
+        border: 4px solid var(--border);
+        border-top-color: var(--primary);
+        border-radius: 50%;
+        animation: table-loading-spin 0.9s linear infinite;
+      }
+
+      @keyframes table-loading-spin {
+        to {
+          transform: rotate(360deg);
+        }
+      }
     </style>
   </head>
   <body>
     <main class="container">
       <section class="top-actions">
-        <button class="secondary" type="button" onclick="goBack_()">← Voltar</button>
+        <button class="secondary collaborators-back-btn" type="button" onclick="goBack_()">Voltar</button>
         <button class="secondary theme-toggle" type="button" data-theme-toggle aria-label="Alternar tema">🌙</button>
       </section>
 
@@ -98,6 +156,13 @@
 
       <section id="messageBox" class="message" aria-live="polite"></section>
     </main>
+
+    <div id="navigationLoadingOverlay" class="navigation-loading-modal hidden" role="status" aria-live="polite" aria-label="Carregando página inicial">
+      <div class="table-loading-backdrop" aria-hidden="true"></div>
+      <div class="table-loading-dialog">
+        <div class="table-loading-spinner" aria-hidden="true"></div>
+      </div>
+    </div>
 
     <script>
       window.APP_BASE_URL = <?!= JSON.stringify(appBaseUrl || '') ?>;
@@ -138,15 +203,65 @@
         }
       }
 
+      function replaceCurrentDocument_(html) {
+        var content = String(html || '');
+        if (!content) {
+          throw new Error('Conteúdo da página vazio.');
+        }
+
+        document.open();
+        document.write(content);
+        document.close();
+      }
+
+      function showNavigationLoading_() {
+        var overlay = document.getElementById('navigationLoadingOverlay');
+        if (!overlay) {
+          return;
+        }
+        overlay.classList.remove('hidden');
+      }
+
+      function markSkipSplashOnce_() {
+        try {
+          window.sessionStorage.setItem('cqexp.skipSplashOnce', '1');
+        } catch (error) {}
+      }
+
+      function buildHomeUrlWithoutSplash_() {
+        var baseUrl = String(window.APP_BASE_URL || '').trim();
+        var homeUrl = '';
+
+        if (baseUrl) {
+          homeUrl = baseUrl + '?page=index';
+        } else {
+          var fallbackUrl = new URL(window.location.href);
+          fallbackUrl.searchParams.set('page', 'index');
+          homeUrl = fallbackUrl.toString();
+        }
+
+        var url = new URL(homeUrl, window.location.origin);
+        url.searchParams.set('nosplash', '1');
+        return url.toString();
+      }
+
       function goBack_() {
-        if (window.APP_BASE_URL) {
-          navigateToMainPage_(window.APP_BASE_URL);
+        showNavigationLoading_();
+        markSkipSplashOnce_();
+
+        if (!window.google || !google.script || !google.script.run) {
+          navigateToMainPage_(buildHomeUrlWithoutSplash_());
           return;
         }
 
-        var fallbackUrl = new URL(window.location.href);
-        fallbackUrl.searchParams.set('page', 'index');
-        navigateToMainPage_(fallbackUrl.toString());
+        google.script.run
+          .withSuccessHandler(function (html) {
+            replaceCurrentDocument_(html);
+          })
+          .withFailureHandler(function () {
+            navigateToMainPage_(buildHomeUrlWithoutSplash_());
+          })
+          .renderPageHtml('index');
       }
 
       function setCollaboratorsTableLoading_(loading) {
