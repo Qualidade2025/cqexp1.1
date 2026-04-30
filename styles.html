@@ -586,16 +586,37 @@
   }
 
   .theme-toggle {
+    width: 42px;
+    height: 34px;
     min-width: 42px;
     line-height: 1;
-    padding: 8px 10px;
+    padding: 0;
     font-size: 16px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
   }
 
   .theme-toggle-icon {
     display: inline-block;
     line-height: 1;
-    font-size: 16px;
+    font-size: 20px;
+  }
+
+  .header-icon {
+    width: 18px;
+    height: 18px;
+    display: block;
+    margin: 0 auto;
+    color: currentColor;
+  }
+
+  .header-icon path {
+    fill: currentColor;
+  }
+
+  html[data-theme='dark'] #editOperatorsBtn .header-icon {
+    color: #fff;
   }
 
   .brand-header {
