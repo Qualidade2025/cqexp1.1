@@ -81,7 +81,7 @@
         display: none !important;
       }
 
-      .navigation-loading-modal .table-loading-backdrop {
+      .table-loading-backdrop {
         position: absolute;
         inset: 0;
         background: var(--overlay);
@@ -89,7 +89,7 @@
         backdrop-filter: blur(5px);
       }
 
-      .navigation-loading-modal .table-loading-dialog {
+      .table-loading-dialog {
         position: relative;
         z-index: 1;
         width: 72px;
@@ -103,13 +103,26 @@
         transform: translateX(-3px);
       }
 
-      .navigation-loading-modal .table-loading-spinner {
+      .table-loading-spinner {
         width: 34px;
         height: 34px;
         border: 4px solid var(--border);
         border-top-color: var(--primary);
         border-radius: 50%;
         animation: table-loading-spin 0.9s linear infinite;
+      }
+
+      .save-loading-modal {
+        position: fixed;
+        inset: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 45;
+      }
+
+      .save-loading-modal.hidden {
+        display: none !important;
       }
 
       @keyframes table-loading-spin {
@@ -157,6 +170,13 @@
 
       <section id="messageBox" class="message" aria-live="polite"></section>
     </main>
+
+    <div id="saveLoadingOverlay" class="save-loading-modal hidden" role="status" aria-live="polite" aria-label="Salvando colaboradores">
+      <div class="table-loading-backdrop" aria-hidden="true"></div>
+      <div class="table-loading-dialog">
+        <div class="table-loading-spinner" aria-hidden="true"></div>
+      </div>
+    </div>
 
     <div id="navigationLoadingOverlay" class="navigation-loading-modal hidden" role="status" aria-live="polite" aria-label="Carregando página inicial">
       <div class="table-loading-backdrop" aria-hidden="true"></div>
@@ -221,6 +241,20 @@
           return;
         }
         overlay.classList.remove('hidden');
+      }
+
+      function setSaveLoading_(loading) {
+        var overlay = document.getElementById('saveLoadingOverlay');
+        if (!overlay) {
+          return;
+        }
+
+        if (loading) {
+          overlay.classList.remove('hidden');
+          return;
+        }
+
+        overlay.classList.add('hidden');
       }
 
       function markSkipSplashOnce_() {
@@ -455,18 +489,22 @@
         }
 
         saveBtn.disabled = true;
-        saveStatus.textContent = 'Salvando...';
+        saveStatus.textContent = '';
+        setSaveLoading_(true);
 
-        google.script.run
-          .withSuccessHandler(function () {
-            goBack_();
-          })
-          .withFailureHandler(function (error) {
-            saveBtn.disabled = false;
-            saveStatus.textContent = '';
-            setMessage_('Falha ao salvar colaboradores: ' + (error.message || error), 'error');
-          })
-          .saveCollaboratorsControls(collectRows_());
+        window.requestAnimationFrame(function () {
+          google.script.run
+            .withSuccessHandler(function () {
+              goBack_();
+            })
+            .withFailureHandler(function (error) {
+              saveBtn.disabled = false;
+              saveStatus.textContent = '';
+              setSaveLoading_(false);
+              setMessage_('Falha ao salvar colaboradores: ' + (error.message || error), 'error');
+            })
+            .saveCollaboratorsControls(collectRows_());
+        });
       }
 
       function setMessage_(text, type) {
