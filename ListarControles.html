@@ -66,6 +66,16 @@
         text-align: right;
       }
 
+      .list-pager {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+
+      .list-pager button {
+        min-width: 90px;
+      }
+
       .table-actions {
         display: flex;
         gap: 6px;
@@ -375,6 +385,11 @@
 
       <div class="list-summary-row">
         <p id="paginationInfo" class="hint list-total">Total: 0</p>
+        <div class="list-pager">
+          <button id="prevPageBtn" class="secondary" type="button">Anterior</button>
+          <span id="pageInfo" class="hint">Página 1 de 1</span>
+          <button id="nextPageBtn" class="secondary" type="button">Próxima</button>
+        </div>
         <p id="aggregatesInfo" class="hint list-aggregates">Revisados: 0 | Defeitos: 0 | Retrabalho: 0,00%</p>
       </div>
 
@@ -602,7 +617,7 @@
 
       var listState = {
         page: 1,
-        pageSize: 1000,
+        pageSize: 50,
         totalPages: 1,
         total: 0,
         items: [],
@@ -656,6 +671,20 @@
         document.getElementById('clearFiltersBtn').addEventListener('click', function () {
           clearFilters_();
           listState.page = 1;
+          loadInspections_();
+        });
+        document.getElementById('prevPageBtn').addEventListener('click', function () {
+          if (listState.page <= 1) {
+            return;
+          }
+          listState.page -= 1;
+          loadInspections_();
+        });
+        document.getElementById('nextPageBtn').addEventListener('click', function () {
+          if (listState.page >= listState.totalPages) {
+            return;
+          }
+          listState.page += 1;
           loadInspections_();
         });
 
@@ -860,7 +889,7 @@
             listState.items = Array.isArray(result.items) ? result.items : [];
             listState.total = Number(result.total) || 0;
             listState.page = Number(result.page) || 1;
-            listState.pageSize = Number(result.pageSize) || 1000;
+            listState.pageSize = Number(result.pageSize) || 50;
             listState.totalPages = Number(result.totalPages) || 1;
 
             renderTable_(listState.items);
@@ -1031,7 +1060,13 @@
 
       function updatePagination_() {
         var info = document.getElementById('paginationInfo');
+        var pageInfo = document.getElementById('pageInfo');
+        var prevPageBtn = document.getElementById('prevPageBtn');
+        var nextPageBtn = document.getElementById('nextPageBtn');
         info.textContent = 'Total: ' + listState.total;
+        pageInfo.textContent = 'Página ' + listState.page + ' de ' + listState.totalPages;
+        prevPageBtn.disabled = listState.page <= 1;
+        nextPageBtn.disabled = listState.page >= listState.totalPages;
         updateAggregates_(listState.items);
       }
 
