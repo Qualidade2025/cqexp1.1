@@ -1,0 +1,517 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <base target="_top" />
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Colaboradores</title>
+    <?!= include('styles') ?>
+    <style>
+      .collaborators-table-wrap {
+        position: relative;
+        min-height: 220px;
+        transition: height 180ms ease;
+      }
+
+      .collaborators-table-wrap.is-loading {
+        height: min(560px, 60vh);
+      }
+
+      .collaborators-table-wrap.is-loading #collaboratorsRows {
+        opacity: 0;
+      }
+
+      #collaboratorsRows {
+        transition: opacity 120ms ease;
+      }
+
+      .collaborators-table-loading {
+        position: absolute;
+        inset: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        pointer-events: none;
+      }
+
+      .collaborators-table-loading::before {
+        content: '';
+        width: 66px;
+        height: 66px;
+        border-radius: 50%;
+        box-shadow: 0 12px 26px rgba(3, 10, 28, 0.35);
+        position: absolute;
+      }
+
+      .collaborators-table-loading.hidden {
+        display: none;
+      }
+
+      .collaborators-table-loading .loading-spinner {
+        width: 32px;
+        height: 32px;
+        border-width: 4px;
+        z-index: 1;
+      }
+
+      .collaborators-table-wrap table thead {
+        position: relative;
+        z-index: 2;
+      }
+
+      .collaborators-back-btn {
+        height: 34px;
+        min-height: 34px;
+        padding-top: 0;
+        padding-bottom: 0;
+        display: inline-flex;
+        align-items: center;
+      }
+
+      .navigation-loading-modal {
+        position: fixed;
+        inset: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 40;
+      }
+
+      .navigation-loading-modal.hidden {
+        display: none !important;
+      }
+
+      .table-loading-backdrop {
+        position: absolute;
+        inset: 0;
+        background: var(--overlay);
+        -webkit-backdrop-filter: blur(5px);
+        backdrop-filter: blur(5px);
+      }
+
+      .table-loading-dialog {
+        position: relative;
+        z-index: 1;
+        width: 72px;
+        height: 72px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: var(--surface);
+        box-shadow: var(--shadow);
+        transform: translateX(-3px);
+      }
+
+      .table-loading-spinner {
+        width: 34px;
+        height: 34px;
+        border: 4px solid var(--border);
+        border-top-color: var(--primary);
+        border-radius: 50%;
+        animation: table-loading-spin 0.9s linear infinite;
+      }
+
+      .save-loading-modal {
+        position: fixed;
+        inset: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 45;
+      }
+
+      .save-loading-modal.hidden {
+        display: none !important;
+      }
+
+      @keyframes table-loading-spin {
+        to {
+          transform: rotate(360deg);
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main class="container">
+      <section class="top-actions">
+        <button class="secondary collaborators-back-btn" type="button" onclick="goBack_()">Voltar</button>
+        <button class="secondary theme-toggle" type="button" data-theme-toggle aria-label="Alternar tema">🌙</button>
+      </section>
+
+      <section class="card">
+        <div class="defect-header">
+          <h2>Colaboradores</h2>
+          <button id="addCollaboratorBtn" class="secondary" type="button">+ Adicionar colaborador</button>
+        </div>
+
+        <div id="collaboratorsTableWrap" class="table-wrap collaborators-table-wrap">
+          <table id="collaboratorsTable">
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>Nome</th>
+                <th>Ativo</th>
+                <th>Ações</th>
+              </tr>
+            </thead>
+            <tbody id="collaboratorsRows"></tbody>
+          </table>
+          <div id="collaboratorsTableLoading" class="collaborators-table-loading hidden" role="status" aria-live="polite" aria-label="Carregando colaboradores">
+            <span class="loading-spinner" aria-hidden="true"></span>
+          </div>
+        </div>
+      </section>
+
+      <section class="actions">
+        <button id="saveBtn" type="button">Salvar</button>
+        <span id="saveStatus" class="hint" aria-live="polite"></span>
+      </section>
+
+      <section id="messageBox" class="message" aria-live="polite"></section>
+    </main>
+
+    <div id="saveLoadingOverlay" class="save-loading-modal hidden" role="status" aria-live="polite" aria-label="Salvando colaboradores">
+      <div class="table-loading-backdrop" aria-hidden="true"></div>
+      <div class="table-loading-dialog">
+        <div class="table-loading-spinner" aria-hidden="true"></div>
+      </div>
+    </div>
+
+    <div id="navigationLoadingOverlay" class="navigation-loading-modal hidden" role="status" aria-live="polite" aria-label="Carregando página inicial">
+      <div class="table-loading-backdrop" aria-hidden="true"></div>
+      <div class="table-loading-dialog">
+        <div class="table-loading-spinner" aria-hidden="true"></div>
+      </div>
+    </div>
+
+    <script>
+      window.APP_BASE_URL = <?!= JSON.stringify(appBaseUrl || '') ?>;
+
+      if (typeof window.initThemeToggle_ === 'function') {
+        window.initThemeToggle_();
+      }
+
+      function initPage_() {
+        var addCollaboratorBtn = document.getElementById('addCollaboratorBtn');
+        if (addCollaboratorBtn && !addCollaboratorBtn.dataset.bound) {
+          addCollaboratorBtn.addEventListener('click', function () {
+            addRow_({ id: getNextCollaboratorId_(), name: '', active: true, isNew: true, isEditing: true });
+          });
+          addCollaboratorBtn.dataset.bound = 'true';
+        }
+
+        var saveBtn = document.getElementById('saveBtn');
+        if (saveBtn && !saveBtn.dataset.bound) {
+          saveBtn.addEventListener('click', saveChanges_);
+          saveBtn.dataset.bound = 'true';
+        }
+
+        loadRows_();
+      }
+
+      if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', initPage_);
+      } else {
+        initPage_();
+      }
+
+      function navigateToMainPage_(url) {
+        try {
+          window.top.location.href = url;
+        } catch (error) {
+          window.location.href = url;
+        }
+      }
+
+      function replaceCurrentDocument_(html) {
+        var content = String(html || '');
+        if (!content) {
+          throw new Error('Conteúdo da página vazio.');
+        }
+
+        document.open();
+        document.write(content);
+        document.close();
+      }
+
+      function showNavigationLoading_() {
+        var overlay = document.getElementById('navigationLoadingOverlay');
+        if (!overlay) {
+          return;
+        }
+        overlay.classList.remove('hidden');
+      }
+
+      function setSaveLoading_(loading) {
+        var overlay = document.getElementById('saveLoadingOverlay');
+        if (!overlay) {
+          return;
+        }
+
+        if (loading) {
+          overlay.classList.remove('hidden');
+          return;
+        }
+
+        overlay.classList.add('hidden');
+      }
+
+      function markSkipSplashOnce_() {
+        try {
+          window.sessionStorage.setItem('cqexp.skipSplashOnce', '1');
+        } catch (error) {}
+      }
+
+      function buildHomeUrlWithoutSplash_() {
+        var baseUrl = String(window.APP_BASE_URL || '').trim();
+        var homeUrl = '';
+
+        if (baseUrl) {
+          homeUrl = baseUrl + '?page=index';
+        } else {
+          var fallbackUrl = new URL(window.location.href);
+          fallbackUrl.searchParams.set('page', 'index');
+          homeUrl = fallbackUrl.toString();
+        }
+
+        var url = new URL(homeUrl, window.location.origin);
+        url.searchParams.set('nosplash', '1');
+        return url.toString();
+      }
+
+      function goBack_() {
+        showNavigationLoading_();
+        markSkipSplashOnce_();
+
+        if (!window.google || !google.script || !google.script.run) {
+          navigateToMainPage_(buildHomeUrlWithoutSplash_());
+          return;
+        }
+
+        google.script.run
+          .withSuccessHandler(function (html) {
+            replaceCurrentDocument_(html);
+          })
+          .withFailureHandler(function () {
+            navigateToMainPage_(buildHomeUrlWithoutSplash_());
+          })
+          .renderPageHtml('index');
+      }
+
+      function setCollaboratorsTableLoading_(loading) {
+        var tableWrap = document.getElementById('collaboratorsTableWrap');
+        var loadingBox = document.getElementById('collaboratorsTableLoading');
+        if (!tableWrap || !loadingBox) {
+          return;
+        }
+
+        if (loading) {
+          tableWrap.classList.add('is-loading');
+          loadingBox.classList.remove('hidden');
+          return;
+        }
+
+        tableWrap.classList.remove('is-loading');
+        loadingBox.classList.add('hidden');
+      }
+
+      function updateCollaboratorsTableHeight_() {
+        var tableWrap = document.getElementById('collaboratorsTableWrap');
+        var table = document.getElementById('collaboratorsTable');
+        if (!tableWrap || !table) {
+          return;
+        }
+
+        tableWrap.style.height = 'auto';
+        var desired = table.offsetHeight + 16;
+        var maxHeight = Math.min(window.innerHeight * 0.6, 560);
+        var minHeight = 220;
+        var nextHeight = Math.max(minHeight, Math.min(desired, maxHeight));
+        tableWrap.style.height = nextHeight + 'px';
+      }
+
+      function loadRows_() {
+        setCollaboratorsTableLoading_(true);
+
+        if (!window.google || !google.script || !google.script.run) {
+          setCollaboratorsTableLoading_(false);
+          updateCollaboratorsTableHeight_();
+          setMessage_('Falha ao carregar colaboradores: ambiente do Apps Script indisponível.', 'error');
+          return;
+        }
+
+        try {
+          google.script.run
+            .withSuccessHandler(function (rows) {
+              renderRows_(Array.isArray(rows) ? rows : []);
+              setCollaboratorsTableLoading_(false);
+              updateCollaboratorsTableHeight_();
+            })
+            .withFailureHandler(function (error) {
+              setCollaboratorsTableLoading_(false);
+              updateCollaboratorsTableHeight_();
+              setMessage_('Falha ao carregar colaboradores: ' + (error.message || error), 'error');
+            })
+            .listCollaboratorsControls();
+        } catch (error) {
+          setCollaboratorsTableLoading_(false);
+          updateCollaboratorsTableHeight_();
+          setMessage_('Falha ao carregar colaboradores: ' + (error.message || error), 'error');
+        }
+      }
+
+      function renderRows_(rows) {
+        var tbody = document.getElementById('collaboratorsRows');
+        tbody.innerHTML = '';
+
+        rows.forEach(function (row) {
+          addRow_(row);
+        });
+      }
+
+      function addRow_(row) {
+        var tbody = document.getElementById('collaboratorsRows');
+        var tr = document.createElement('tr');
+
+        var isEditing = !!row.isEditing;
+
+        var idCell = document.createElement('td');
+        var idInput = document.createElement('input');
+        idInput.type = 'text';
+        idInput.maxLength = 50;
+        idInput.value = String(row.id || '').trim();
+        idInput.disabled = true;
+        idInput.placeholder = 'ID';
+        idCell.appendChild(idInput);
+
+        var nameCell = document.createElement('td');
+        var nameInput = document.createElement('input');
+        nameInput.type = 'text';
+        nameInput.maxLength = 120;
+        nameInput.value = String(row.name || '').trim();
+        nameInput.disabled = !isEditing;
+        nameInput.placeholder = 'Nome';
+        nameCell.appendChild(nameInput);
+
+        var activeCell = document.createElement('td');
+        var activeInput = document.createElement('input');
+        activeInput.type = 'checkbox';
+        activeInput.checked = row.active !== false;
+        activeInput.disabled = !isEditing;
+        activeCell.appendChild(activeInput);
+
+        var actionCell = document.createElement('td');
+        var editBtn = document.createElement('button');
+        editBtn.type = 'button';
+        editBtn.className = 'secondary';
+        editBtn.textContent = isEditing ? 'Concluir' : 'Editar';
+
+        editBtn.addEventListener('click', function () {
+          var nowEditing = editBtn.textContent === 'Editar';
+          editBtn.textContent = nowEditing ? 'Concluir' : 'Editar';
+          nameInput.disabled = !nowEditing;
+          activeInput.disabled = !nowEditing;
+        });
+
+        actionCell.appendChild(editBtn);
+
+        tr.appendChild(idCell);
+        tr.appendChild(nameCell);
+        tr.appendChild(activeCell);
+        tr.appendChild(actionCell);
+
+        tbody.appendChild(tr);
+        updateCollaboratorsTableHeight_();
+      }
+
+      function getNextCollaboratorId_() {
+        var rows = Array.prototype.slice.call(document.querySelectorAll('#collaboratorsRows tr'));
+        var maxNumericId = 0;
+        var detectedPrefix = '';
+        var detectedDigits = 0;
+
+        rows.forEach(function (tr) {
+          var idInput = tr && tr.cells && tr.cells[0] ? tr.cells[0].querySelector('input') : null;
+          var value = String(idInput && idInput.value ? idInput.value : '').trim();
+          var prefixedMatch = value.match(/^([A-Za-z]+)(\d+)$/);
+
+          if (prefixedMatch) {
+            var prefix = prefixedMatch[1];
+            var numericPart = prefixedMatch[2];
+            var parsedPrefixed = parseInt(numericPart, 10);
+
+            if (isFinite(parsedPrefixed) && parsedPrefixed > maxNumericId) {
+              maxNumericId = parsedPrefixed;
+              detectedPrefix = prefix;
+              detectedDigits = numericPart.length;
+            }
+            return;
+          }
+
+          var parsed = parseInt(value, 10);
+          if (isFinite(parsed) && parsed > maxNumericId) {
+            maxNumericId = parsed;
+          }
+        });
+
+        var nextNumericId = maxNumericId + 1;
+        if (detectedPrefix) {
+          var paddedNumericId = String(nextNumericId);
+          while (paddedNumericId.length < detectedDigits) {
+            paddedNumericId = '0' + paddedNumericId;
+          }
+          return detectedPrefix + paddedNumericId;
+        }
+
+        return String(nextNumericId);
+      }
+
+      function collectRows_() {
+        var bodyRows = Array.prototype.slice.call(document.querySelectorAll('#collaboratorsRows tr'));
+
+        return bodyRows.map(function (tr) {
+          return {
+            id: String(tr.cells[0].querySelector('input').value || '').trim(),
+            name: String(tr.cells[1].querySelector('input').value || '').trim(),
+            active: !!tr.cells[2].querySelector('input').checked
+          };
+        });
+      }
+
+      function saveChanges_() {
+        var saveBtn = document.getElementById('saveBtn');
+        var saveStatus = document.getElementById('saveStatus');
+
+        if (!window.google || !google.script || !google.script.run) {
+          setMessage_('Falha ao salvar colaboradores: ambiente do Apps Script indisponível.', 'error');
+          return;
+        }
+
+        saveBtn.disabled = true;
+        saveStatus.textContent = '';
+        setSaveLoading_(true);
+
+        window.requestAnimationFrame(function () {
+          google.script.run
+            .withSuccessHandler(function () {
+              goBack_();
+            })
+            .withFailureHandler(function (error) {
+              saveBtn.disabled = false;
+              saveStatus.textContent = '';
+              setSaveLoading_(false);
+              setMessage_('Falha ao salvar colaboradores: ' + (error.message || error), 'error');
+            })
+            .saveCollaboratorsControls(collectRows_());
+        });
+      }
+
+      function setMessage_(text, type) {
+        var messageBox = document.getElementById('messageBox');
+        messageBox.textContent = text || '';
+        messageBox.className = 'message' + (type ? ' ' + type : '');
+      }
+    </script>
+  </body>
+</html>
