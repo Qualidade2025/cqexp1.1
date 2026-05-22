@@ -17,7 +17,8 @@ var state = {
   },
   startup: {
     catalogsLoaded: false
-  }
+  },
+  isSaving: false
 };
 
 var STORAGE_KEY = 'cqexp.selectedOperators';
@@ -733,23 +734,38 @@ function tryAutoFillClientByOp_() {
 }
 
 function saveInspection_() {
+  if (state.isSaving) {
+    return;
+  }
+
   if (isOpLookupInvalidForSave_()) {
     setMessage_('Não é possível salvar: a OP informada não foi encontrada na aba op_cliente.', 'error');
     return;
   }
 
-  var payload = buildPayload_();
-
+  state.isSaving = true;
   setLoading_(true);
   setSaveLoadingOverlay_(true);
 
+  var payload;
+  try {
+    payload = buildPayload_();
+  } catch (error) {
+    state.isSaving = false;
+    setLoading_(false);
+    setSaveLoadingOverlay_(false);
+    throw error;
+  }
+
   google.script.run
-    .withSuccessHandler(function (response) {
+    .withSuccessHandler(function () {
+      state.isSaving = false;
       setLoading_(false);
       setSaveLoadingOverlay_(false);
       resetForm_();
     })
     .withFailureHandler(function (error) {
+      state.isSaving = false;
       setLoading_(false);
       setSaveLoadingOverlay_(false);
       setMessage_(error.message || String(error), 'error');
